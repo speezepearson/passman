@@ -1,0 +1,25 @@
+{
+  "name": "passman",
+  "version": "1.0.0",
+  "description": "",
+  "main": "encryptdecrypt.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "build-watch": "webpack --watch"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "html-webpack-inline-source-plugin": "0.0.9"
+  },
+
+  "babel": {
+    "presets": [
+      "es2015"
+    ],
+    "plugins": [
+      "babel-plugin-async-to-promises"
+    ]
+  }
+}
