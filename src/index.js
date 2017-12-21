@@ -1,102 +1,16 @@
 'use strict';
 
-/* ========================================================
-            ENCRYPTION / DECRYPTION
-   ======================================================== */
+import Payload from './payload.js';
+import downloadThisPageWithNewPayload from './download.js';
 
-const Subtle = window.crypto.subtle;
-async function pbkdf2(password, salt, forEncryption) {
-  var pwUtf8 = new TextEncoder().encode(password);
-  var pwHash = await Subtle.digest('SHA-256', pwUtf8);
-  return await Subtle.deriveKey(
-    {'name': 'PBKDF2', 'salt': salt, 'iterations': 100000, 'hash': 'SHA-256'},
-    await Subtle.importKey('raw', pwHash, {'name': 'PBKDF2'}, false, ['deriveKey']),
-    {'name': 'AES-GCM', 'length': 256},
-    false,
-    [forEncryption ? 'encrypt' : 'decrypt']
-  );
-}
-async function encrypt(password, plaintext) {
-  var salt = window.crypto.getRandomValues(new Uint8Array(12));
-  var key = await pbkdf2(password, salt, true);
-
-  var ptUtf8 = new TextEncoder().encode(plaintext);
-  var iv = window.crypto.getRandomValues(new Uint8Array(12));
-  var ciphertext = await Subtle.encrypt({'name': 'AES-GCM', 'iv': iv}, key, ptUtf8);
-
-  return [salt, iv, ciphertext];
-}
-async function decrypt(password, salt, iv, ciphertext) {
-  var key = await pbkdf2(password, salt, false);
-
-  var ptUtf8 = await Subtle.decrypt({'name': 'AES-GCM', 'iv': iv}, key, ciphertext);
-
-  return new TextDecoder().decode(ptUtf8);
-}
-
-
-/* ========================================================
-            DOWNLOADING A MODIFIED VERSION OF THIS PAGE
-   ======================================================== */
-
-function download(filename, text) {
-  // source: https://stackoverflow.com/a/18197511/8877656
-  var pom = document.createElement('a');
-  pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-  pom.setAttribute('download', filename);
-
-  if (document.createEvent) {
-    var event = document.createEvent('MouseEvents');
-    event.initEvent('click', true, true);
-    pom.dispatchEvent(event);
-  }
-  else {
-    pom.click();
-  }
-}
-
-function downloadThisPageWithNewPayload(salt, iv, ciphertext) {
-  var $salt       = document.getElementById('payload-salt');
-  var $iv         = document.getElementById('payload-iv');
-  var $ciphertext = document.getElementById('payload-ciphertext');
-  var $plaintext  = document.getElementById('plaintext');
-  var $password   = document.getElementById('password');
-
-  var oldSalt       = $salt        .innerText;
-  var oldIV         = $iv          .innerText;
-  var oldCiphertext = $ciphertext  .innerText;
-  var oldPlaintext  = $plaintext   .value;
-  var oldPassword   = $password    .value;
-
-  $salt      .innerText = JSON.stringify(Array.from(salt));
-  $iv        .innerText = JSON.stringify(Array.from(iv));
-  $ciphertext.innerText = JSON.stringify(Array.from(new Uint8Array(ciphertext)));
-  $plaintext .innerText = ''; $plaintext.value = '';
-  $password  .innerText = ''; $password.value = '';
-
-  var html = document.getElementsByTagName('html')[0].outerHTML;
-
-  download('encryptdecrypt.html', html);
-
-  $salt      .innerText = oldSalt;
-  $iv        .innerText = oldIV;
-  $ciphertext.innerText = oldCiphertext;
-  $plaintext .value     = oldPlaintext;
-  $password  .value     = oldPassword;
-}
-
-async function tryDecrypt() {
-  var salt       = new Uint8Array(JSON.parse(document.getElementById('payload-salt')      .innerText));
-  var iv         = new Uint8Array(JSON.parse(document.getElementById('payload-iv')        .innerText));
-  var ciphertext = new Uint8Array(JSON.parse(document.getElementById('payload-ciphertext').innerText)).buffer;
-  // debugger
+async function tryDecrypt(payload) {
   if (document.getElementById('plaintext').value !== '') {
     alert('refusing to overwrite text present in plaintext area; delete it if you really want to');
     return;
   }
   var pw = document.getElementById('password').value;
   try {
-    var plaintext = await decrypt(pw, salt, iv, ciphertext);
+    var plaintext = await payload.decrypt(pw);
     document.getElementById('plaintext').value = plaintext;
     document.getElementById('password').classList.remove('wrong');
     document.getElementById('password').classList.add('right');
@@ -109,13 +23,13 @@ async function tryDecrypt() {
 async function onEncryptAndDownloadButtonClick() {
   var pw = document.getElementById('password').value;
   var plaintext = document.getElementById('plaintext').value;
-  var salt, iv, ciphertext;
-  [salt, iv, ciphertext] = await encrypt(pw, plaintext);
+  var payload = await Payload.create({'name': 'AES-GCM', 'length': 256}, pw, plaintext);
+  var serializedPayload = payload.serialize();
 
   try {
-    var decrypted = await decrypt(pw, salt, iv, ciphertext)
+    var decrypted = await Payload.deserialize(serializedPayload).decrypt(pw);
     if (decrypted === plaintext) {
-      downloadThisPageWithNewPayload(salt, iv, ciphertext);
+      downloadThisPageWithNewPayload(serializedPayload);
     } else {
       alert('decrypt(encrypt(message)) was not identical! What the heck?');
     }
@@ -125,10 +39,14 @@ async function onEncryptAndDownloadButtonClick() {
 }
 
 window.addEventListener('load', () => {
+
+  var originalPayload = Payload.deserialize(document.getElementById('payload').innerText);
+
   var $pw = document.getElementById('password')
+  $pw.focus();
   document.getElementById('password').addEventListener('input', (e) => {
     if (document.getElementById('plaintext').value === '') {
-      tryDecrypt();
+      tryDecrypt(originalPayload);
     }
   });
   document.getElementById('download-button').addEventListener('click', () => {
