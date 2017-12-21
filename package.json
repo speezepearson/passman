@@ -11,12 +11,15 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "ava": "^0.24.0",
+    "babel-cli": "^6.26.0",
+    "babel-plugin-async-to-promises": "^1.0.5",
+    "babel-preset-env": "^1.6.1",
     "html-webpack-inline-source-plugin": "0.0.9"
   },
-
   "babel": {
     "presets": [
-      "es2015"
+      "env"
     ],
     "plugins": [
       "babel-plugin-async-to-promises"
