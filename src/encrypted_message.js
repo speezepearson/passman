@@ -3,83 +3,92 @@
 const Subtle = window.crypto.subtle;
 window.Subtle = Subtle;
 
-async function pbkdf2(password, salt, encryptionAlgorithm, forEncryption) {
+async function pbkdf2(password, keyDerivationAlgorithm, encryptionAlgorithm, forEncryption) {
   var pwUtf8 = new TextEncoder().encode(password);
   var pwHash = await Subtle.digest('SHA-256', pwUtf8);
   return await Subtle.deriveKey(
-    {'name': 'PBKDF2', 'salt': salt, 'iterations': 100000, 'hash': 'SHA-256'},
-    await Subtle.importKey('raw', pwHash, {'name': 'PBKDF2'}, false, ['deriveKey']),
+    keyDerivationAlgorithm,
+    await Subtle.importKey('raw', pwHash, keyDerivationAlgorithm, false, ['deriveKey']),
     encryptionAlgorithm,
     false,
     [forEncryption ? 'encrypt' : 'decrypt']
   );
 }
 
+const typedAlgorithmFields = ['iv', 'salt', 'counter']
+function algorithmToJSONFriendlyObject(algorithm) {
+  var j = Object.assign({}, algorithm);
+  typedAlgorithmFields.forEach(attr => {
+    if (j[attr] !== undefined) {
+      j[attr] = Array.from(j[attr]);
+    }
+  });
+  return j;
+}
+function jsonFriendlyObjectToAlgorithm(j) {
+  var algorithm = Object.assign({}, j);
+  typedAlgorithmFields.forEach(attr => {
+    if (algorithm[attr] !== undefined) {
+      algorithm[attr] = new Uint8Array(algorithm[attr]);
+    }
+  });
+  return algorithm;
+}
+
+const defaultOptions = {
+  keyDerivationAlgorithm: {'name': 'PBKDF2', 'hash': 'SHA-256', 'iterations': 100000},
+  encryptionAlgorithm: {'name': 'AES-GCM', 'length': 256}
+};
+
 class EncryptedMessage {
-  constructor(salt, encryptionAlgorithm, ciphertext) {
-    this.salt = salt;
+
+  constructor(keyDerivationAlgorithm, encryptionAlgorithm, ciphertext) {
+    this.keyDerivationAlgorithm = keyDerivationAlgorithm;
     this.encryptionAlgorithm = encryptionAlgorithm;
     this.ciphertext = ciphertext;
   }
 
   toJSONFriendlyObject() {
-    var j = {
-      salt: Array.from(this.salt),
-      encryptionAlgorithm: Object.assign({}, this.encryptionAlgorithm),
+    return {
+      keyDerivationAlgorithm: algorithmToJSONFriendlyObject(this.keyDerivationAlgorithm),
+      encryptionAlgorithm: algorithmToJSONFriendlyObject(this.encryptionAlgorithm),
       ciphertext: Array.from(new Uint8Array(this.ciphertext))
     };
-    if (j.encryptionAlgorithm.iv !== undefined) {
-      j.encryptionAlgorithm.iv = Array.from(j.encryptionAlgorithm.iv);
-    }
-    return j;
   }
   static fromJSONFriendlyObject(j) {
-    var {salt, encryptionAlgorithm, ciphertext} = j;
-    if (salt === undefined || encryptionAlgorithm === undefined || ciphertext === undefined) {
+    var {keyDerivationAlgorithm, encryptionAlgorithm, ciphertext} = j;
+    if (keyDerivationAlgorithm === undefined || encryptionAlgorithm === undefined || ciphertext === undefined) {
       alert('malformed JSON-ized encrypted message')
     }
-    salt = new Uint8Array(salt);
-    if (encryptionAlgorithm.iv !== undefined) {
-      encryptionAlgorithm.iv = new Uint8Array(encryptionAlgorithm.iv);
-    }
+    keyDerivationAlgorithm = jsonFriendlyObjectToAlgorithm(keyDerivationAlgorithm);
+    encryptionAlgorithm = jsonFriendlyObjectToAlgorithm(encryptionAlgorithm);
     ciphertext = new Uint8Array(ciphertext).buffer;
-    return new EncryptedMessage(salt, encryptionAlgorithm, ciphertext);
+    return new EncryptedMessage(keyDerivationAlgorithm, encryptionAlgorithm, ciphertext);
   }
 
   serialize() {
-    return encodeURIComponent(JSON.stringify(this.toJSONFriendlyObject()));
+    return JSON.stringify(this.toJSONFriendlyObject());
   }
   static deserialize(s) {
-    return EncryptedMessage.fromJSONFriendlyObject(JSON.parse(decodeURIComponent(s)));
+    return EncryptedMessage.fromJSONFriendlyObject(JSON.parse(s));
   }
 
-  static async create(encryptionAlgorithm, password, plaintext) {
-    var salt = window.crypto.getRandomValues(new Uint8Array(12));
-    var key = await pbkdf2(password, salt, encryptionAlgorithm, true);
+  static async create(password, plaintext, options) {
+    options = Object.assign({}, defaultOptions, options);
+    var {keyDerivationAlgorithm, encryptionAlgorithm} = options
+    keyDerivationAlgorithm.salt = window.crypto.getRandomValues(new Uint8Array(12));
+    var key = await pbkdf2(password, keyDerivationAlgorithm, encryptionAlgorithm, true);
     var ptUtf8 = new TextEncoder().encode(plaintext);
 
-    if (encryptionAlgorithm.name === 'AES-GCM') {
-      encryptionAlgorithm.iv = window.crypto.getRandomValues(new Uint8Array(12));
-    } else {
-      throw 'unknown algorithm; TODO'
-    }
-
+    encryptionAlgorithm.iv = window.crypto.getRandomValues(new Uint8Array(12));
     var ciphertext = await Subtle.encrypt(encryptionAlgorithm, key, ptUtf8);
 
-    return new EncryptedMessage(salt, encryptionAlgorithm, ciphertext)
+    return new EncryptedMessage(keyDerivationAlgorithm, encryptionAlgorithm, ciphertext)
   }
 
   async decrypt(password) {
-    var salt = new Uint8Array(this.salt);
-    var encryptionAlgorithm = this.encryptionAlgorithm;
-    ['iv', 'counter'].forEach((attr) => {
-      if (encryptionAlgorithm[attr] !== undefined) {
-        encryptionAlgorithm[attr] = new Uint8Array(encryptionAlgorithm[attr]);
-      }
-    });
-    var ciphertext = new Uint8Array(this.ciphertext).buffer;
-    var key = await pbkdf2(password, salt, this.encryptionAlgorithm, false);
-    var ptUtf8 = await Subtle.decrypt(encryptionAlgorithm, key, ciphertext);
+    var key = await pbkdf2(password, this.keyDerivationAlgorithm, this.encryptionAlgorithm, false);
+    var ptUtf8 = await Subtle.decrypt(this.encryptionAlgorithm, key, this.ciphertext);
     return new TextDecoder().decode(ptUtf8);
   }
 }

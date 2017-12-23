@@ -19,7 +19,7 @@ async function onDecryptButtonClick() {
 
 async function onEncryptAndDownloadButtonClick() {
   var pw = document.getElementById('password').value;
-  var encryptedMessage = await EncryptedMessage.create({'name': 'AES-GCM', 'length': 256}, pw, window.plaintext);
+  var encryptedMessage = await EncryptedMessage.create(pw, window.plaintext);
   window.m = encryptedMessage
   if (window.plaintext === await (EncryptedMessage.deserialize(encryptedMessage.serialize()).decrypt(pw))) {
     downloadThisPageWithNewEncryptedMessage(encryptedMessage);
