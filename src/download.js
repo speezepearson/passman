@@ -17,11 +17,11 @@ function download(filename, text) {
 var originalHTML = null;
 window.addEventListener('load', () => {originalHTML = document.getElementsByTagName('html')[0].outerHTML});
 
-function downloadThisPageWithNewPayload(serializedPayload) {
+function downloadThisPageWithNewEncryptedMessage(encryptedMessage) {
   var e = document.createElement('html');
   e.innerHTML = originalHTML;
-  e.getElementsByClassName('payload')[0].innerText = serializedPayload;
+  e.getElementsByClassName('encrypted-message')[0].innerText = encryptedMessage.serialize();
   download('encryptdecrypt.html', e.innerHTML);
 }
 
-export default downloadThisPageWithNewPayload;
+export default downloadThisPageWithNewEncryptedMessage;

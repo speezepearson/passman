@@ -15,26 +15,42 @@ async function pbkdf2(password, salt, encryptionAlgorithm, forEncryption) {
   );
 }
 
-class Payload {
+class EncryptedMessage {
   constructor(salt, encryptionAlgorithm, ciphertext) {
     this.salt = salt;
     this.encryptionAlgorithm = encryptionAlgorithm;
     this.ciphertext = ciphertext;
   }
 
-  serialize() {
+  toJSONFriendlyObject() {
     var j = {
       salt: Array.from(this.salt),
       encryptionAlgorithm: Object.assign({}, this.encryptionAlgorithm),
       ciphertext: Array.from(new Uint8Array(this.ciphertext))
     };
-    j.encryptionAlgorithm.iv = Array.from(j.encryptionAlgorithm.iv);
-    return encodeURIComponent(JSON.stringify(j));
+    if (j.encryptionAlgorithm.iv !== undefined) {
+      j.encryptionAlgorithm.iv = Array.from(j.encryptionAlgorithm.iv);
+    }
+    return j;
+  }
+  static fromJSONFriendlyObject(j) {
+    var {salt, encryptionAlgorithm, ciphertext} = j;
+    if (salt === undefined || encryptionAlgorithm === undefined || ciphertext === undefined) {
+      alert('malformed JSON-ized encrypted message')
+    }
+    salt = new Uint8Array(salt);
+    if (encryptionAlgorithm.iv !== undefined) {
+      encryptionAlgorithm.iv = new Uint8Array(encryptionAlgorithm.iv);
+    }
+    ciphertext = new Uint8Array(ciphertext).buffer;
+    return new EncryptedMessage(salt, encryptionAlgorithm, ciphertext);
+  }
+
+  serialize() {
+    return encodeURIComponent(JSON.stringify(this.toJSONFriendlyObject()));
   }
   static deserialize(s) {
-    var {salt, encryptionAlgorithm, ciphertext} = JSON.parse(decodeURIComponent(s));
-    encryptionAlgorithm.iv = new Uint8Array(encryptionAlgorithm.iv);
-    return new Payload(new Uint8Array(salt), encryptionAlgorithm, new Uint8Array(ciphertext).buffer);
+    return EncryptedMessage.fromJSONFriendlyObject(JSON.parse(decodeURIComponent(s)));
   }
 
   static async create(encryptionAlgorithm, password, plaintext) {
@@ -50,11 +66,10 @@ class Payload {
 
     var ciphertext = await Subtle.encrypt(encryptionAlgorithm, key, ptUtf8);
 
-    return new Payload(salt, encryptionAlgorithm, ciphertext)
+    return new EncryptedMessage(salt, encryptionAlgorithm, ciphertext)
   }
 
   async decrypt(password) {
-    console.log('decrypting', this)
     var salt = new Uint8Array(this.salt);
     var encryptionAlgorithm = this.encryptionAlgorithm;
     ['iv', 'counter'].forEach((attr) => {
@@ -69,4 +84,4 @@ class Payload {
   }
 }
 
-export default Payload;
+export default EncryptedMessage;
