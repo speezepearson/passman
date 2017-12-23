@@ -15,10 +15,14 @@ async function pbkdf2(password, keyDerivationAlgorithm, encryptionAlgorithm, for
   );
 }
 
-const typedAlgorithmFields = ['iv', 'salt', 'counter']
+const typedAlgorithmFields = {
+  'iv': (a => Uint8Array.from(a)),
+  'salt': (a => Uint8Array.from(a)),
+  'counter': (a => Uint8Array.from(a))
+};
 function algorithmToJSONFriendlyObject(algorithm) {
   var j = Object.assign({}, algorithm);
-  typedAlgorithmFields.forEach(attr => {
+  Object.keys(typedAlgorithmFields).forEach(attr => {
     if (j[attr] !== undefined) {
       j[attr] = Array.from(j[attr]);
     }
@@ -27,9 +31,9 @@ function algorithmToJSONFriendlyObject(algorithm) {
 }
 function jsonFriendlyObjectToAlgorithm(j) {
   var algorithm = Object.assign({}, j);
-  typedAlgorithmFields.forEach(attr => {
+  Object.entries(typedAlgorithmFields).forEach(([attr, typify]) => {
     if (algorithm[attr] !== undefined) {
-      algorithm[attr] = new Uint8Array(algorithm[attr]);
+      algorithm[attr] = typify(algorithm[attr]);
     }
   });
   return algorithm;
