@@ -2,6 +2,7 @@
 
 import EncryptedMessage from './encrypted_message.js';
 import downloadThisPageWithNewEncryptedMessage from './download.js';
+import copyToClipboard from './copy_to_clipboard.js';
 
 async function onDecryptButtonClick() {
   var pw = document.getElementById('password').value;
@@ -36,4 +37,12 @@ window.addEventListener('load', () => {
   $pw.focus();
   document.getElementById('decrypt-button').addEventListener('click', onDecryptButtonClick);
   document.getElementById('download-button').addEventListener('click', onEncryptAndDownloadButtonClick);
+
+  document.getElementById('copy-button').addEventListener('click', () => {
+    if (window.plaintext !== undefined) {
+      copyToClipboard(window.plaintext);
+    } else {
+      alert('message is not decrypted');
+    }
+  });
 });
