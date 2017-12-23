@@ -2,9 +2,7 @@
   "name": "passman",
   "version": "1.0.0",
   "description": "",
-  "main": "encryptdecrypt.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack",
     "build-watch": "webpack --watch"
   },
