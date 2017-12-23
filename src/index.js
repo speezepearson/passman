@@ -45,4 +45,14 @@ window.addEventListener('load', () => {
       alert('message is not decrypted');
     }
   });
+
+  document.getElementById('view-plaintext-button').addEventListener('mousedown', () => {
+    document.getElementById('plaintext-holder').innerText = window.plaintext;
+  });
+  document.getElementById('view-plaintext-button').addEventListener('mouseup', () => {
+    document.getElementById('plaintext-holder').innerText = '';
+  });
+  document.getElementById('view-plaintext-button').addEventListener('mouseleave', () => {
+    document.getElementById('plaintext-holder').innerText = '';
+  });
 });
