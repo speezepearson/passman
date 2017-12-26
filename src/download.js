@@ -1,11 +1,13 @@
+import _getGlobals from './globals.js'; var globals = _getGlobals();
+
 function download(filename, text) {
   // source: https://stackoverflow.com/a/18197511/8877656
-  var pom = document.createElement('a');
+  var pom = globals.document.createElement('a');
   pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
   pom.setAttribute('download', filename);
 
-  if (document.createEvent) {
-    var event = document.createEvent('MouseEvents');
+  if (globals.document.createEvent) {
+    var event = globals.document.createEvent('MouseEvents');
     event.initEvent('click', true, true);
     pom.dispatchEvent(event);
   }
@@ -15,13 +17,15 @@ function download(filename, text) {
 }
 
 var originalHTML = null;
-window.addEventListener('load', () => {originalHTML = document.getElementsByTagName('html')[0].outerHTML});
+function takeSnapshot() {
+  originalHTML = globals.document.getElementsByTagName('html')[0].outerHTML
+}
 
 function downloadThisPageWithNewEncryptedMessage(encryptedMessage) {
-  var e = document.createElement('html');
+  var e = globals.document.createElement('html');
   e.innerHTML = originalHTML;
   e.getElementsByClassName('encrypted-message')[0].innerText = encryptedMessage.serialize();
   download('encryptdecrypt.html', e.innerHTML);
 }
 
-export default downloadThisPageWithNewEncryptedMessage;
+export { takeSnapshot, downloadThisPageWithNewEncryptedMessage };

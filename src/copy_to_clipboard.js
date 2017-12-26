@@ -1,6 +1,8 @@
+import _getGlobals from './globals.js'; var globals = _getGlobals();
+
 function copyToClipboard(text) {
   // source: https://stackoverflow.com/a/30810322
-  var textArea = document.createElement("textarea");
+  var textArea = globals.document.createElement("textarea");
 
   //
   // *** This styling is an extra step which is likely not required. ***
@@ -41,19 +43,19 @@ function copyToClipboard(text) {
 
   textArea.value = text;
 
-  document.body.appendChild(textArea);
+  globals.document.body.appendChild(textArea);
 
   textArea.select();
 
   try {
-    var successful = document.execCommand('copy');
+    var successful = globals.document.execCommand('copy');
     var msg = successful ? 'successful' : 'unsuccessful';
     console.log('Copying text command was ' + msg);
   } catch (err) {
     console.log('Oops, unable to copy');
   }
 
-  document.body.removeChild(textArea);
+  globals.document.body.removeChild(textArea);
 }
 
 export default copyToClipboard;

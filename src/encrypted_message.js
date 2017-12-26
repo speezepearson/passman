@@ -1,14 +1,11 @@
-'use strict';
-
-const Subtle = window.crypto.subtle;
-window.Subtle = Subtle;
+import _getGlobals from './globals.js'; var globals = _getGlobals();
 
 async function pbkdf2(password, keyDerivationAlgorithm, encryptionAlgorithm, forEncryption) {
   var pwUtf8 = new TextEncoder().encode(password);
-  var pwHash = await Subtle.digest('SHA-256', pwUtf8);
-  return await Subtle.deriveKey(
+  var pwHash = await globals.window.crypto.subtle.digest('SHA-256', pwUtf8);
+  return await globals.window.crypto.subtle.deriveKey(
     keyDerivationAlgorithm,
-    await Subtle.importKey('raw', pwHash, keyDerivationAlgorithm, false, ['deriveKey']),
+    await globals.window.crypto.subtle.importKey('raw', pwHash, keyDerivationAlgorithm, false, ['deriveKey']),
     encryptionAlgorithm,
     false,
     [forEncryption ? 'encrypt' : 'decrypt']
@@ -80,19 +77,19 @@ class EncryptedMessage {
   static async create(password, plaintext, options) {
     options = Object.assign({}, defaultOptions, options);
     var {keyDerivationAlgorithm, encryptionAlgorithm} = options
-    keyDerivationAlgorithm.salt = window.crypto.getRandomValues(new Uint8Array(12));
+    keyDerivationAlgorithm.salt = globals.window.crypto.getRandomValues(new Uint8Array(12));
     var key = await pbkdf2(password, keyDerivationAlgorithm, encryptionAlgorithm, true);
     var ptUtf8 = new TextEncoder().encode(plaintext);
 
-    encryptionAlgorithm.iv = window.crypto.getRandomValues(new Uint8Array(12));
-    var ciphertext = await Subtle.encrypt(encryptionAlgorithm, key, ptUtf8);
+    encryptionAlgorithm.iv = globals.window.crypto.getRandomValues(new Uint8Array(12));
+    var ciphertext = await globals.window.crypto.subtle.encrypt(encryptionAlgorithm, key, ptUtf8);
 
     return new EncryptedMessage(keyDerivationAlgorithm, encryptionAlgorithm, ciphertext)
   }
 
   async decrypt(password) {
     var key = await pbkdf2(password, this.keyDerivationAlgorithm, this.encryptionAlgorithm, false);
-    var ptUtf8 = await Subtle.decrypt(this.encryptionAlgorithm, key, this.ciphertext);
+    var ptUtf8 = await globals.window.crypto.subtle.decrypt(this.encryptionAlgorithm, key, this.ciphertext);
     return new TextDecoder().decode(ptUtf8);
   }
 }
