@@ -129,12 +129,36 @@ function onEnter(element, callback) {
   });
 }
 
+var importedEncryptedMessage = null;
+function onImportCiphertextFileSelect() {
+  var file = document.getElementById('import-ciphertext-file').files[0];
+  if (file === undefined) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var html = e.target.result;
+      var elem = parseHTML(html, 'div', true);
+      if (elem.getElementsByClassName === undefined) throw 'unable to parse file as html';
+      var ciphertext = elem.getElementsByClassName('encrypted-message')[0].innerText;
+      importedEncryptedMessage = EncryptedMessage.deserialize(ciphertext);
+    } catch (err) {
+      alert('error importing: '+err)
+      document.getElementById('import-ciphertext-file').value = [];
+    }
+  }
+  reader.readAsText(file);
+}
+function importCiphertext() {
+  document.getElementById('encrypted-message').innerText = importedEncryptedMessage.serialize();
+}
+
 window.addEventListener('load', () => {
   Object.entries({'unlock-button': unlock,
                   'lock-button': lock,
                   'copy-plaintext-button': copyPlaintext,
                   'copy-ciphertext-button': copyCiphertext,
-                  'lock-and-download-button': lockAndDownload})
+                  'lock-and-download-button': lockAndDownload,
+                  'import-ciphertext-button': importCiphertext})
         .forEach(([id, clickCallback]) => {
           document.getElementById(id).addEventListener('click', clickCallback);
         })
@@ -168,6 +192,10 @@ window.addEventListener('load', () => {
     }
     updateView();
   })
+  document.getElementById('import-ciphertext-file').addEventListener('input', () => {
+    onImportCiphertextFileSelect();
+  });
+  onImportCiphertextFileSelect();
   try {[document.getElementById('field'), document.getElementById('account')].forEach(el => {
     onEnter(el, () => {document.getElementsByClassName('copy-button')[0].click(); el.focus()});
   });} catch (err) {debugger};
