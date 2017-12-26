@@ -25,10 +25,11 @@
 
 
   <input type="password" id="password" placeholder="decryption password" />
-  <button id="unlock-button">Unlock</button>
-  <button id="lock-button">Lock</button>
-  <button id="copy-plaintext-button">Copy Plaintext</button>
-  <button id="lock-and-download-button">Lock and Download</button>
+  <button id="unlock-button" class="locked-only">Unlock</button>
+  <button id="lock-button" class="unlocked-only">Lock</button>
+  <button id="copy-ciphertext-button" class="locked-only">Copy Ciphertext</button>
+  <button id="copy-plaintext-button" class="unlocked-only">Copy Plaintext</button>
+  <button id="lock-and-download-button" class="unlocked-only">Lock and Download</button>
 
   <div>
     Take

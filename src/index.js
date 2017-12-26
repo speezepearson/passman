@@ -31,10 +31,12 @@ window.addEventListener('load', () => {
 
 function updateView() {
   view.refresh();
-  document.getElementById('unlock-button').disabled = isDecrypted();
-  [document.getElementById('lock-button'), document.getElementById('copy-plaintext-button'), document.getElementById('lock-and-download-button')].forEach(button => {
-    button.disabled = !isDecrypted();
-  });
+  Object.entries({'unlocked-only': isDecrypted(), 'locked-only': !isDecrypted()})
+        .forEach(([className, enabled]) => {
+          Array.from(document.getElementsByClassName(className)).forEach(e => {
+            e.disabled = !enabled;
+          });
+        });
 }
 
 window.j = null;
@@ -129,6 +131,9 @@ function download(filename, text) {
     pom.click();
   }
 }
+function copyCiphertext() {
+  copyToClipboard(JSON.stringify(EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText).toJSONFriendlyObject()));
+}
 async function lockAndDownload() {
   await lock();
   downloadThisPageWithNewEncryptedMessage(EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText));
@@ -168,10 +173,14 @@ function onEnter(element, callback) {
 }
 
 window.addEventListener('load', () => {
-  document.getElementById('unlock-button').addEventListener('click', unlock);
-  document.getElementById('lock-button').addEventListener('click', lock);
-  document.getElementById('copy-plaintext-button').addEventListener('click', copyPlaintext);
-  document.getElementById('lock-and-download-button').addEventListener('click', lockAndDownload);
+  Object.entries({'unlock-button': unlock,
+                  'lock-button': lock,
+                  'copy-plaintext-button': copyPlaintext,
+                  'copy-ciphertext-button': copyCiphertext,
+                  'lock-and-download-button': lockAndDownload})
+        .forEach(([id, clickCallback]) => {
+          document.getElementById(id).addEventListener('click', clickCallback);
+        })
 
   window.addEventListener('input', (e) => {
     if (e.target.classList.contains('query-field')) {
