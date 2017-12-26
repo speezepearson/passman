@@ -55,49 +55,6 @@ function isQueryPrecise() {
   return fieldMatches.length === 1;
 }
 
-var encryptedJ = {
-  "github": {
-    "username": "leethacker",
-    "password": "pw-for-github"
-  },
-  "amazon": {
-    "username": "potato.king@gmail.com",
-    "password": "pw-for-amazon",
-    "email": "potato.king@gmail.com"
-  },
-  "google": {
-    "username": "potato.king",
-    "password": "pw-for-google"
-  },
-  "google__throwaway": {
-    "username": "throwaway2349",
-    "password": "pw-for-google"
-  },
-  "google__throwaway2": {
-    "username": "yet.another.alias",
-    "password": "pw-for-google"
-  },
-  "facebook": {
-    "username": "yet.another.alias@gmail.com",
-    "password": "pw-for-facebook",
-    "email": "yet.another.alias@gmail.com"
-  },
-  "pypi.python.org:potato.king@gmail.com": {
-    "username": "potato.king@gmail.com",
-    "password": "pw-for-pypi.python.org:potato.king@gmail.com",
-    "email": "potato.king@gmail.com"
-  },
-  "verizon": {
-    "username": "throwaway2349@gmail.com",
-    "password": "pw-for-verizon",
-    "email": "throwaway2349@gmail.com"
-  },
-  "lesserwrong": {
-    "username": "Optimal Alias",
-    "password": "pw-for-lesserwrong"
-  }
-}
-
 async function unlock() {
   var em = EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText);
   var plaintext;
