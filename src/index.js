@@ -5,12 +5,13 @@ globals.document = document;
 import { takeSnapshot, downloadThisPageWithNewEncryptedMessage } from './download.js';
 window.addEventListener('load', takeSnapshot);
 
+import { flash } from './flash.js';
+import ElementContentImporter from './element_content_importer.js';
 import SecretsView from './secrets_view.js';
 import copyToClipboard from './copy_to_clipboard.js';
 import { makeGood, makeBad, doAndSetGoodness } from './goodness.js';
 import EncryptedMessage from './encrypted_message.js';
 import query from './query.js';
-import parseHTML from './parse_html.js';
 
 function only(xs) {
   if (xs.length !== 1) {
@@ -68,10 +69,11 @@ async function unlock() {
   window.j = JSON.parse(plaintext);
   updateView();
   document.getElementById('account').focus()
+  flash(document.getElementById('unlock-button'), 'lightgreen');
 }
 function copyPlaintext() {
   copyToClipboard(JSON.stringify(window.j, null, 2));
-  flashText(document.getElementById('copy-plaintext-button'), 'Copied!');
+  flash(document.getElementById('copy-plaintext-button'), 'lightgreen');
 }
 function download(filename, text) {
   // adapted from: https://stackoverflow.com/a/18197511/8877656
@@ -91,13 +93,33 @@ function download(filename, text) {
 function copyCiphertext() {
   copyToClipboard(JSON.stringify(EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText).toJSONFriendlyObject()));
 }
-async function lockAndDownload() {
-  await lock();
+async function downloadNewPassman() {
   downloadThisPageWithNewEncryptedMessage(EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText));
 }
+function normalizedJString(j) {
+  return JSON.stringify(Object.entries(j).sort().map(([k,v]) => [k, Object.entries(v).sort()]));
+}
+function jEqual(j1, j2) {
+  return normalizedJString(j1) === normalizedJString(j2);
+}
 async function lock() {
+  var password = document.getElementById('password').value;
+
+  var shouldContinue = true;
+  var oldJ;
+  try {
+    oldJ = JSON.parse(await EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText).decrypt(password));
+  } catch (err) {
+    if (err.name !== 'OperationError') {
+      throw err;
+    }
+    shouldContinue = confirm("You are about to lock the document with a different password than you started with! Make sure that's what you want.");
+  }
+  if (!shouldContinue) return;
   var em = await EncryptedMessage.create(document.getElementById('password').value, JSON.stringify(window.j));
   document.getElementById('encrypted-message').innerText = em.serialize();
+
+  var changed = !jEqual(window.j, oldJ);
 
   // Probably a dumb threat model, but:
   // modify objects in-place as much as possible so they're not just
@@ -113,12 +135,13 @@ async function lock() {
   makeBad(document.getElementById('password'));
   document.getElementById('password').focus()
   updateView();
-}
 
-function flashText(e, t) {
-  var originalText = e.innerText;
-  e.innerText = t;
-  setTimeout(() => {e.innerText = originalText}, 500);
+  if (changed) {
+    if (confirm('You changed something; would you like to download your new passwords as a new file?')) {
+      downloadNewPassman();
+    }
+  }
+  flash(document.getElementById('lock-button'), 'lightgreen');
 }
 
 function onEnter(element, callback) {
@@ -129,24 +152,12 @@ function onEnter(element, callback) {
   });
 }
 
-var importedEncryptedMessage = null;
-function onImportCiphertextFileSelect() {
+var importedEncryptedMessage;
+async function onImportCiphertextFileSelect() {
   var file = document.getElementById('import-ciphertext-file').files[0];
   if (file === undefined) return;
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      var html = e.target.result;
-      var elem = parseHTML(html, 'div', true);
-      if (elem.getElementsByClassName === undefined) throw 'unable to parse file as html';
-      var ciphertext = elem.getElementsByClassName('encrypted-message')[0].innerText;
-      importedEncryptedMessage = EncryptedMessage.deserialize(ciphertext);
-    } catch (err) {
-      alert('error importing: '+err)
-      document.getElementById('import-ciphertext-file').value = [];
-    }
-  }
-  reader.readAsText(file);
+  var ciphertext = await extractElementTextFromFile(file, 'encrypted-message');
+  importedEncryptedMessage = EncryptedMessage.deserialize(ciphertext);
 }
 function importCiphertext() {
   document.getElementById('encrypted-message').innerText = importedEncryptedMessage.serialize();
@@ -156,12 +167,11 @@ window.addEventListener('load', () => {
   Object.entries({'unlock-button': unlock,
                   'lock-button': lock,
                   'copy-plaintext-button': copyPlaintext,
-                  'copy-ciphertext-button': copyCiphertext,
-                  'lock-and-download-button': lockAndDownload,
-                  'import-ciphertext-button': importCiphertext})
+                  'copy-ciphertext-button': copyCiphertext})
         .forEach(([id, clickCallback]) => {
           document.getElementById(id).addEventListener('click', clickCallback);
-        })
+        });
+
 
   window.addEventListener('input', (e) => {
     if (e.target.classList.contains('query-field')) {
@@ -171,12 +181,14 @@ window.addEventListener('load', () => {
   window.addEventListener('click', (e) => {
     if (e.target.classList.contains('copy-button')) {
       copyToClipboard(window.j[e.target.getAttribute('data-account')][e.target.getAttribute('data-field')]);
-      flashText(e.target, 'Copied!')
+      flash(e.target, 'lightgreen')
     }
   });
 
   document.getElementById('password').focus();
-  onEnter(document.getElementById('password'), unlock);
+  onEnter(document.getElementById('password'), () => {
+    document.getElementById(isDecrypted() ? 'lock-button' : 'unlock-button').click()
+  });
   onEnter(document.getElementById('set-value'), () => {
     var account = document.getElementById('account').value;
     var field = document.getElementById('field').value;
@@ -191,13 +203,19 @@ window.addEventListener('load', () => {
       window.j[account][field] = document.getElementById('set-value').value;
     }
     updateView();
+    flash(document.getElementById('set-value'), 'lightgreen');
   })
-  document.getElementById('import-ciphertext-file').addEventListener('input', () => {
-    onImportCiphertextFileSelect();
-  });
-  onImportCiphertextFileSelect();
-  try {[document.getElementById('field'), document.getElementById('account')].forEach(el => {
+
+  window.onbeforeunload = () => {
+  }
+
+  window.ciphertextImporter = new ElementContentImporter(
+    document.getElementById('encrypted-message'),
+    document.getElementById('import-ciphertext-file'),
+    EncryptedMessage.deserialize
+  );
+  [document.getElementById('field'), document.getElementById('account')].forEach(el => {
     onEnter(el, () => {document.getElementsByClassName('copy-button')[0].click(); el.focus()});
-  });} catch (err) {debugger};
+  });
   updateView();
 });

@@ -19,17 +19,32 @@
     #view-holder table {
       border-collapse: collapse;
     }
+
+    #whole-file-operations {
+      margin-bottom: 2em;
+    }
+
+    .column-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .row-container {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
   </style>
 </head>
 <body>
 
-
+<div id="whole-file-operations" class="row-container">
   <input type="password" id="password" placeholder="decryption password" />
   <button id="unlock-button" class="locked-only">Unlock</button>
-  <button id="lock-button" class="unlocked-only">Lock</button>
   <button id="copy-ciphertext-button" class="locked-only">Copy Ciphertext</button>
+  <button id="lock-button" class="unlocked-only">Lock</button>
   <button id="copy-plaintext-button" class="unlocked-only">Copy Plaintext</button>
-  <button id="lock-and-download-button" class="unlocked-only">Lock and Download</button>
+</div>
 
   <div>
     Take
@@ -60,8 +75,7 @@
 <br />
 
 Import ciphertext from another Passman file:
-  <input type="file" id="import-ciphertext-file" />
-  <button id="import-ciphertext-button">Import</button>
+  <input class="locked-only" type="file" id="import-ciphertext-file" />
 
 <br />
 <hr />

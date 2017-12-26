@@ -1,9 +1,8 @@
-import parseHTML from './parse_html.js';
 import query from './query.js';
 import _getGlobals from './globals.js'; var globals = _getGlobals();
 
-function appendNewChild(parent, html) {
-  var result = parseHTML(html, parent.tagName);
+function appendNewChild(parent, tagName) {
+  var result = globals.document.createElement(tagName);
   parent.appendChild(result);
   return result;
 }
@@ -34,23 +33,21 @@ class SecretsView {
     var j = filterJ(this.getData(), this.getAccountQ(), this.getFieldQ());
     if (j === null || Object.keys(j).length === 0) return;
 
-    var tbody = appendNewChild(globals.document.getElementById('view-holder'), `
-      <table>
-        <tr>
-          <th>Account</th>
-          <th>Copy</th>
-        </tr>
-      </table>`).getElementsByTagName('tbody')[0];
+    var table = appendNewChild(globals.document.getElementById('view-holder'), 'table');
+    var headerRow = appendNewChild(table, 'tr');
+    appendNewChild(headerRow, 'th').innerText = 'Account';
+    appendNewChild(headerRow, 'th').innerText = 'Copy';
     Object.entries(j).forEach(([account, info]) => {
-      var tr = appendNewChild(tbody, '<tr />');
-      appendNewChild(tr, '<td />').innerText = account;
-      var dataCell = appendNewChild(tr, '<td />');
+      var tr = appendNewChild(table, 'tr');
+      appendNewChild(tr, 'td').innerText = account;
+      var dataCell = appendNewChild(tr, 'td');
       Object.keys(info).sort().forEach(field => {
-        var copyButton = appendNewChild(dataCell, '<button class="copy-button"></button>');
+        var copyButton = appendNewChild(dataCell, 'button');
+        copyButton.classList.add('copy-button');
         copyButton.setAttribute('data-account', account);
         copyButton.setAttribute('data-field', field);
         copyButton.innerText = field;
-        appendNewChild(dataCell, '<br />');
+        appendNewChild(dataCell, 'br');
       });
     });
   }
