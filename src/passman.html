@@ -1,0 +1,98 @@
+<html>
+<head>
+  <title>Encrypted Text File</title>
+  <style>
+    #account, #field {
+      width: 10em;
+    }
+
+    .good {
+      outline: 1px solid lightgreen;
+    }
+    .bad {
+      outline: 1px solid red;
+    }
+
+    th,td {
+      border: 1px solid black;
+    }
+    #view-holder table {
+      border-collapse: collapse;
+    }
+  </style>
+</head>
+<body>
+
+
+  <input type="password" id="password" placeholder="decryption password" />
+  <button id="unlock-button" class="locked-only">Unlock</button>
+  <button id="lock-button" class="unlocked-only">Lock</button>
+  <button id="copy-ciphertext-button" class="locked-only">Copy Ciphertext</button>
+  <button id="copy-plaintext-button" class="unlocked-only">Copy Plaintext</button>
+  <button id="lock-and-download-button" class="unlocked-only">Lock and Download</button>
+
+  <div>
+    Take
+    <input type="text" class="query-field" id="account" placeholder="account" />
+    .
+    <input type="text" class="query-field" id="field" placeholder="field" value="password" />
+    and...
+
+    <ul>
+      <li>
+        ...copy it (by hitting Enter in one of those text fields, or clicking a button below).<br />
+        (Those text fields are regexps, except Space is replaced with "one or more characters.")
+      </li>
+      <li>
+        ...change it, by typing the new value here and hitting Enter:
+        <input type="password" id="set-value" placeholder="new value" />
+        (leave empty to delete).<br />
+        (In this case, the above fields are <i>not</i> regexps, they are exact.)
+      </li>
+    </ul>
+  </div>
+
+  Query matches:
+  <div id="view-holder"></div>
+
+<br />
+<hr />
+<br />
+
+<details>
+  <summary><strong>Help</strong></summary>
+
+  <details style="margin: 0.5em; border-left: 1px solid black; padding-left: 0.5em">
+    <summary>I can't recover my passwords!</summary>
+    <p>
+      You can use
+      <a href="https://github.com/speezepearson/passman/blob/master/recover.py">this Python script</a>
+      to recover them: in a terminal, run <code>pip install cryptodomex &amp;&amp; python recover.py html &lt; &lt;this file&gt;</code>.
+    </p>
+    <p>
+      If Cryptodome stopped being maintained or something: sorry, you'll have to roll up your sleeves and:
+    </p>
+    <ul>
+      <li>UTF-8 encode your master password</li>
+      <li>run that through SHA-256</li>
+      <li>run that hash through PBKDF2 (with the parameters given by the encrypted payload's <code>keyDerivationAlgorithm</code>)</li>
+      <li>use that key to decrypt the encrypted payload's <code>ciphertext</code> using the encrypted payload's <code>encryptionAlgorithm</code> (by default, AES-256 in Galois/Counter Mode).</li>
+    </ul>
+  </details>
+
+  <details style="margin: 0.5em; border-left: 1px solid black; padding-left: 0.5em">
+    <summary>Why does [UI feature] suck?</summary>
+    Maybe one of:
+    <ol>
+      <li>I try hard to make sure none of your secrets end up anywhere the browser might cache them -- notably, the JavaScript console, and anywhere in the DOM. This is rather constraining.</li>
+      <li>"Copy to clipboard" is only permitted as a direct result of a user action; no asynchronous copies are allowed. Unfortunately, the whole WebCrypto interface is asynchronous, so anything like "encrypt-and-copy" is impossible.</li>
+    </ol>
+  </details>
+</details>
+
+
+  <div hidden="" class="encrypted-message" id="encrypted-message">{"keyDerivationAlgorithm":{"name":"PBKDF2","hash":"SHA-256","iterations":100000,"salt":[124,133,52,131,223,62,209,148,76,80,33,113]},"encryptionAlgorithm":{"name":"AES-GCM","length":256,"iv":[173,82,22,20,145,17,210,253,236,225,153,9]},"ciphertext":[255,63,5,84,184,252,102,187,130,149,116,83,129,4,76,1,143,232,63,73,106,16,197,232,100,43,197,230,235,104,53,193,116,239,114,142,253,173,0,1,136,5,34,31,116,27,33,92,151,200,19,24,12,117,166,114,220,31,116,187,183,250,98,16,84,231,11,108,26,69,226,229,226,124,32,43,57,214,69,17,195,242,140,140,78,140,238,167,9,80,42,76,9,103,117,189,30,33,25,115,123,230,255,15,221,146,210,31,143,194,255,173,159,24,13,33,47,73,161,62,95,77,197,235,208,170,107,17,231,67,230,46,30,83,219,157,147,192,16,140,181,213,82,10,49,99,134,88,49,105,36,142,170,76,234,36,217,59,17,129,60,193,51,221,71,85,184,202,45,215,192,115,72,190,11,134,37,78,200,79,89,38,66,228,158,29,247,90,253,17,156,225,249,21,98,124,94,131,235,166,99,170,29,7,24,255,35,217,84,158,195,140,83,203,198,217,151,95,45,68,107,194,172,83,17,89,110,157,74,42,176,12,212,26,196,68,189,97,35,168,255,249,214,158,200,31,184,203,109,71,123,190,130,183,30,101,167,105,203,189,250,45,13,141,29,252,8,117,219,14,28,143,144,201,67,226,229,247,101,95,196,82,102,150,64,19,223,96,103,45,200,98,22,158,172,13,21,35,131,108,13,79,57,18,254,123,84,220,148,7,144,230,246,58,101,9,94,67,128,235,141,11,66,249,100,134,6,146,79,202,45,234,19,255,118,10,35,39,195,133,43,157,3,46,246,136,217,219,127,107,234,216,41,239,45,246,215,0,93,38,42,242,44,160,231,163,47,72,77,127,222,208,104,253,94,0,69,218,145,249,30,236,76,70,171,218,17,39,108,194,84,84,114,85,86,79,12,21,235,14,29,142,137,81,85,42,107,227,69,34,9,197,239,109,101,21,254,123,206,124,233,105,4,173,224,214,151,130,219,188,175,153,215,190,91,89,96,240,68,230,196,178,34,57,26,114,17,9,53,223,250,151,44,31,89,178,209,217,23,154,85,150,97,107,69,243,171,169,223,190,33,132,8,198,59,12,218,250,203,146,120,10,48,236,17,28,200,92,226,189,48,149,15,208,11,218,247,246,117,157,137,26,182,131,10,94,22,50,181,176,61,54,195,134,166,19,133,198,136,227,190,121,160,9,175,220,9,255,223,177,115,237,32,238,174,133,138,42,224,128,159,5,78,99,180,32,135,196,153,140,14,108,82,29,67,10,67,155,141,47,48,71,19,3,88,8,247,104,153,250,16,41,123,72,201,156,198,125,172,87,100,22,60,134,55,91,248,50,61,116,238,2,160,162,84,157,78,47,237,235,71,173,31,252,30,147,218,37,8,140,249,172,45,151,197,102,89,84,31,69,240,239,242,28,107,175,9,170,0,64,77,242,128,138,75,222,121,64,140,79,249,5,109,233,138,69,246,1,84,0,52,211,149,253,139,195,191,99,12,105,153,99,114,150,231,104,72,30,186,37,202,131,242,154,207,7,171,19,178,154,96,27,167,106,4,146,169,253,192,251,227,183,56,175,223,114,85,113,181,226,189,175,179,196,173,242,84,52,254,45,201,242,241,138,173,194,208,13,137,225,114,12,91,204,134,28,139,160,129,51,146,170,241,182,210,55,200,142,240,210,183,5,35,137,102,79,123,82,83,45,211,56,57,188,78,98,255,72,63,206,151,134,229,31,117,67,180,236,132,225,67,228,211,92,145,54,158,52,107,83,163,129,19,28,24,152,137,38,79,47,136,55,48,93,110,103,197,203,131,197,3,251,222,166,168,5,174,145,10,179,41,83,12,86,51,69,171,208,141,80,166,198,128,19,72,153,91,195,96,200,228,210,164,145,108,120,215,174,121,237,15,239,185,159,231,106,135,124,209,141,241,53,128,162,174,134,18,204,153,154,121,186,193,83,69,166,182,160,18,128,173,87,79,23,127,44,112,169]}</div>
+
+
+</body>
+</html>

@@ -17,7 +17,6 @@ function filterJ(j, q1, q2) {
       result[k][k2] = j[k][k2];
     });
   });
-  console.log('filtered is', result)
   return result;
 }
 

@@ -25,7 +25,7 @@ function downloadThisPageWithNewEncryptedMessage(encryptedMessage) {
   var e = globals.document.createElement('html');
   e.innerHTML = originalHTML;
   e.getElementsByClassName('encrypted-message')[0].innerText = encryptedMessage.serialize();
-  download('encryptdecrypt.html', e.innerHTML);
+  download('passman.html', e.innerHTML);
 }
 
 export { takeSnapshot, downloadThisPageWithNewEncryptedMessage };

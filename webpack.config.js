@@ -31,7 +31,8 @@ var config = {
 
   'plugins': [
     new HtmlWebpackPlugin({
-      'template': 'src/index.html',
+      'filename': 'passman.html',
+      'template': 'src/passman.html',
       'inject': 'head',
       'inlineSource': '.(js|css)$'
     }),
