@@ -13,11 +13,11 @@
       outline: 1px solid red;
     }
 
+    table {
+      border-collapse: collapse;
+    }
     th,td {
       border: 1px solid black;
-    }
-    #view-holder table {
-      border-collapse: collapse;
     }
 
     #whole-file-operations {
@@ -959,10 +959,18 @@ exports.default = EncryptedMessage;
 
 <div id="whole-file-operations" class="row-container">
   <input type="password" id="password" placeholder="decryption password" />
-  <button id="unlock-button" class="locked-only">Unlock</button>
-  <button id="copy-ciphertext-button" class="locked-only">Copy Ciphertext</button>
-  <button id="lock-button" class="unlocked-only">Lock</button>
-  <button id="copy-plaintext-button" class="unlocked-only">Copy Plaintext</button>
+
+  <table>
+    <tr>
+      <td><button id="unlock-button" class="locked-only">Unlock</button></td>
+      <td><button id="copy-ciphertext-button" class="locked-only">Copy Ciphertext</button></td>
+      <td><input class="locked-only" type="file" id="import-ciphertext-file" /> to import ciphertext from other Passman file</td>
+    </tr>
+    <tr>
+      <td><button id="lock-button" class="unlocked-only">Lock</button></td>
+      <td><button id="copy-plaintext-button" class="unlocked-only">Copy Plaintext</button></td>
+    </tr>
+  </table>
 </div>
 
   <div>
@@ -988,13 +996,6 @@ exports.default = EncryptedMessage;
 
   Query matches:
   <div id="view-holder"></div>
-
-<br />
-<hr />
-<br />
-
-Import ciphertext from another Passman file:
-  <input class="locked-only" type="file" id="import-ciphertext-file" />
 
 <br />
 <hr />
