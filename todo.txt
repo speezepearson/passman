@@ -1,0 +1,4 @@
+Add polyfills for things that reasonable people might be missing
+Enable downloading even when nothing has changed
+Remove the pre-fill for field="password"
+Fix the decryption password flashing
