@@ -13,6 +13,20 @@ import { makeGood, makeBad, doAndSetGoodness } from './goodness.js';
 import EncryptedMessage from './encrypted_message.js';
 import query from './query.js';
 
+function obliterate(x) {
+  if (Array.isArray(x)) {
+    while (x.length > 0) {
+      obliterate(x[x.length-1]);
+      x.pop();
+    }
+  } else if (typeof x === 'object') {
+    Object.entries(x).forEach(([k,v]) => {
+      obliterate(v);
+      delete x[k];
+    });
+  }
+}
+
 function only(xs) {
   if (xs.length !== 1) {
     throw `expected 1 thing, got ${xs.length}: ${JSON.stringify(xs)}`
@@ -56,6 +70,19 @@ function isQueryPrecise() {
   return fieldMatches.length === 1;
 }
 
+// I'd like to only store a fingerprint,
+//  but all the crypto stuff is asynchronous,
+//  which means we couldn't check the fingerprint when the page is closed.
+// I think this is the lesser of two evils,
+//  since we're storing j in plaintext anyway.
+var normalizedDecryptedJ = null;
+function normalizeJ(j) {
+  window.areThereUnsavedChanges = areThereUnsavedChanges;
+  return Object.entries(j).sort().map(([k, v]) => [k, Object.entries(v).sort()]);
+}
+function areThereUnsavedChanges() {
+  return JSON.stringify(normalizeJ(window.j)) !== JSON.stringify(normalizedDecryptedJ);
+}
 async function unlock() {
   var em = EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText);
   var plaintext;
@@ -67,6 +94,7 @@ async function unlock() {
     return;
   }
   window.j = JSON.parse(plaintext);
+  normalizedDecryptedJ = normalizeJ(window.j);
   updateView();
   document.getElementById('account').focus()
   flash(document.getElementById('unlock-button'), 'lightgreen');
@@ -96,12 +124,6 @@ function copyCiphertext() {
 async function downloadNewPassman() {
   downloadThisPageWithNewEncryptedMessage(EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText));
 }
-function normalizedJString(j) {
-  return JSON.stringify(Object.entries(j).sort().map(([k,v]) => [k, Object.entries(v).sort()]));
-}
-function jEqual(j1, j2) {
-  return normalizedJString(j1) === normalizedJString(j2);
-}
 async function lock() {
   var password = document.getElementById('password').value;
 
@@ -119,16 +141,14 @@ async function lock() {
   var em = await EncryptedMessage.create(document.getElementById('password').value, JSON.stringify(window.j));
   document.getElementById('encrypted-message').innerText = em.serialize();
 
-  var changed = !jEqual(window.j, oldJ);
+  var changed = areThereUnsavedChanges();
 
   // Probably a dumb threat model, but:
   // modify objects in-place as much as possible so they're not just
   // floating around easily inspectable until the GC runs.
-  Object.entries(window.j).forEach(([account, info]) => {
-    Object.keys(info).forEach(k => {delete info[k]});
-    delete window.j[account];
-  });
-  window.j = null;
+  obliterate(normalizedDecryptedJ); normalizedDecryptedJ = null;
+  obliterate(window.j); window.j = null;
+
   Array.from(document.getElementsByTagName('input'))
           .filter(e => e.type==='password')
           .forEach(e => {e.value = ''});
@@ -207,6 +227,12 @@ window.addEventListener('load', () => {
   })
 
   window.onbeforeunload = () => {
+    var changed = areThereUnsavedChanges();
+    obliterate(normalizedDecryptedJ); normalizedDecryptedJ = null;
+    obliterate(window.j); window.j = null;
+    if (changed) {
+      return "There are unsaved changes. Consider saving them."
+    }
   }
 
   window.ciphertextImporter = new ElementContentImporter(

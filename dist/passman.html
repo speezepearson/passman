@@ -166,6 +166,8 @@ exports.default = query;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _globals = __webpack_require__(0);
 
 var _globals2 = _interopRequireDefault(_globals);
@@ -204,6 +206,24 @@ globals.document = document;
 
 window.addEventListener('load', _download.takeSnapshot);
 
+function obliterate(x) {
+  if (Array.isArray(x)) {
+    while (x.length > 0) {
+      obliterate(x[x.length - 1]);
+      x.pop();
+    }
+  } else if ((typeof x === 'undefined' ? 'undefined' : _typeof(x)) === 'object') {
+    Object.entries(x).forEach(function (_ref) {
+      var _ref2 = _slicedToArray(_ref, 2),
+          k = _ref2[0],
+          v = _ref2[1];
+
+      obliterate(v);
+      delete x[k];
+    });
+  }
+}
+
 function only(xs) {
   if (xs.length !== 1) {
     throw 'expected 1 thing, got ' + xs.length + ': ' + JSON.stringify(xs);
@@ -224,10 +244,10 @@ window.addEventListener('load', function () {
 
 function updateView() {
   view.refresh();
-  Object.entries({ 'unlocked-only': isDecrypted(), 'locked-only': !isDecrypted() }).forEach(function (_ref) {
-    var _ref2 = _slicedToArray(_ref, 2),
-        className = _ref2[0],
-        enabled = _ref2[1];
+  Object.entries({ 'unlocked-only': isDecrypted(), 'locked-only': !isDecrypted() }).forEach(function (_ref3) {
+    var _ref4 = _slicedToArray(_ref3, 2),
+        className = _ref4[0],
+        enabled = _ref4[1];
 
     Array.from(document.getElementsByClassName(className)).forEach(function (e) {
       e.disabled = !enabled;
@@ -251,6 +271,25 @@ function isQueryPrecise() {
   return fieldMatches.length === 1;
 }
 
+// I'd like to only store a fingerprint,
+//  but all the crypto stuff is asynchronous,
+//  which means we couldn't check the fingerprint when the page is closed.
+// I think this is the lesser of two evils,
+//  since we're storing j in plaintext anyway.
+var normalizedDecryptedJ = null;
+function normalizeJ(j) {
+  window.areThereUnsavedChanges = areThereUnsavedChanges;
+  return Object.entries(j).sort().map(function (_ref5) {
+    var _ref6 = _slicedToArray(_ref5, 2),
+        k = _ref6[0],
+        v = _ref6[1];
+
+    return [k, Object.entries(v).sort()];
+  });
+}
+function areThereUnsavedChanges() {
+  return JSON.stringify(normalizeJ(window.j)) !== JSON.stringify(normalizedDecryptedJ);
+}
 function unlock() {
   var em, plaintext;
   return Promise.resolve().then(function () {
@@ -266,6 +305,7 @@ function unlock() {
     });
   }).then(function () {
     window.j = JSON.parse(plaintext);
+    normalizedDecryptedJ = normalizeJ(window.j);
     updateView();
     document.getElementById('account').focus();
     (0, _flash.flash)(document.getElementById('unlock-button'), 'lightgreen');
@@ -297,18 +337,6 @@ function downloadNewPassman() {
     (0, _download.downloadThisPageWithNewEncryptedMessage)(_encrypted_message2.default.deserialize(document.getElementById('encrypted-message').innerText));
   });
 }
-function normalizedJString(j) {
-  return JSON.stringify(Object.entries(j).sort().map(function (_ref3) {
-    var _ref4 = _slicedToArray(_ref3, 2),
-        k = _ref4[0],
-        v = _ref4[1];
-
-    return [k, Object.entries(v).sort()];
-  }));
-}
-function jEqual(j1, j2) {
-  return normalizedJString(j1) === normalizedJString(j2);
-}
 function lock() {
   var password, shouldContinue, oldJ, em, changed;
   return Promise.resolve().then(function () {
@@ -333,23 +361,15 @@ function lock() {
 
         document.getElementById('encrypted-message').innerText = em.serialize();
 
-        changed = !jEqual(window.j, oldJ);
+        changed = areThereUnsavedChanges();
 
         // Probably a dumb threat model, but:
         // modify objects in-place as much as possible so they're not just
         // floating around easily inspectable until the GC runs.
 
-        Object.entries(window.j).forEach(function (_ref5) {
-          var _ref6 = _slicedToArray(_ref5, 2),
-              account = _ref6[0],
-              info = _ref6[1];
+        obliterate(normalizedDecryptedJ);normalizedDecryptedJ = null;
+        obliterate(window.j);window.j = null;
 
-          Object.keys(info).forEach(function (k) {
-            delete info[k];
-          });
-          delete window.j[account];
-        });
-        window.j = null;
         Array.from(document.getElementsByTagName('input')).filter(function (e) {
           return e.type === 'password';
         }).forEach(function (e) {
@@ -444,7 +464,14 @@ window.addEventListener('load', function () {
     (0, _flash.flash)(document.getElementById('set-value'), 'lightgreen');
   });
 
-  window.onbeforeunload = function () {};
+  window.onbeforeunload = function () {
+    var changed = areThereUnsavedChanges();
+    obliterate(normalizedDecryptedJ);normalizedDecryptedJ = null;
+    obliterate(window.j);window.j = null;
+    if (changed) {
+      return "There are unsaved changes. Consider saving them.";
+    }
+  };
 
   window.ciphertextImporter = new _element_content_importer2.default(document.getElementById('encrypted-message'), document.getElementById('import-ciphertext-file'), _encrypted_message2.default.deserialize);
   [document.getElementById('field'), document.getElementById('account')].forEach(function (el) {
