@@ -38,7 +38,7 @@ var view;
 window.addEventListener('load', () => {
   view = new SecretsView(
     document.getElementById('view-holder'),
-    () => window.j,
+    () => j,
     () => document.getElementById('account').value,
     () => document.getElementById('field').value,
   );
@@ -54,19 +54,19 @@ function updateView() {
         });
 }
 
-window.j = null;
+var j = null;
 function isDecrypted() {
-  return window.j !== null;
+  return j !== null;
 }
 function isQueryPrecise() {
   if (!isDecrypted()) return false;
   var accountQuery = document.getElementById('account').value;
-  var accountMatches = query(accountQuery, window.j);
+  var accountMatches = query(accountQuery, j);
   if (accountMatches.length !== 1) {
     return false;
   }
   var fieldQuery = document.getElementById('field').value;
-  var fieldMatches = query(fieldQuery, window.j[accountMatches[0]]);
+  var fieldMatches = query(fieldQuery, j[accountMatches[0]]);
   return fieldMatches.length === 1;
 }
 
@@ -81,7 +81,7 @@ function normalizeJ(j) {
   return Object.entries(j).sort().map(([k, v]) => [k, Object.entries(v).sort()]);
 }
 function areThereUnsavedChanges() {
-  return JSON.stringify(normalizeJ(window.j)) !== JSON.stringify(normalizedDecryptedJ);
+  return JSON.stringify(normalizeJ(j)) !== JSON.stringify(normalizedDecryptedJ);
 }
 async function unlock() {
   var em = EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText);
@@ -93,14 +93,14 @@ async function unlock() {
     document.getElementById('password').focus();
     return;
   }
-  window.j = JSON.parse(plaintext);
-  normalizedDecryptedJ = normalizeJ(window.j);
+  j = JSON.parse(plaintext);
+  normalizedDecryptedJ = normalizeJ(j);
   updateView();
   document.getElementById('account').focus()
   flash(document.getElementById('unlock-button'), 'lightgreen');
 }
 function copyPlaintext() {
-  copyToClipboard(JSON.stringify(window.j, null, 2));
+  copyToClipboard(JSON.stringify(j, null, 2));
   flash(document.getElementById('copy-plaintext-button'), 'lightgreen');
 }
 function download(filename, text) {
@@ -138,7 +138,7 @@ async function lock() {
     shouldContinue = confirm("You are about to lock the document with a different password than you started with! Make sure that's what you want.");
   }
   if (!shouldContinue) return;
-  var em = await EncryptedMessage.create(document.getElementById('password').value, JSON.stringify(window.j));
+  var em = await EncryptedMessage.create(document.getElementById('password').value, JSON.stringify(j));
   document.getElementById('encrypted-message').innerText = em.serialize();
 
   var changed = areThereUnsavedChanges();
@@ -147,7 +147,7 @@ async function lock() {
   // modify objects in-place as much as possible so they're not just
   // floating around easily inspectable until the GC runs.
   obliterate(normalizedDecryptedJ); normalizedDecryptedJ = null;
-  obliterate(window.j); window.j = null;
+  obliterate(j); j = null;
 
   Array.from(document.getElementsByTagName('input'))
           .filter(e => e.type==='password')
@@ -200,7 +200,7 @@ window.addEventListener('load', () => {
   });
   window.addEventListener('click', (e) => {
     if (e.target.classList.contains('copy-button')) {
-      copyToClipboard(window.j[e.target.getAttribute('data-account')][e.target.getAttribute('data-field')]);
+      copyToClipboard(j[e.target.getAttribute('data-account')][e.target.getAttribute('data-field')]);
       flash(e.target, 'lightgreen')
     }
   });
@@ -213,14 +213,14 @@ window.addEventListener('load', () => {
     var account = document.getElementById('account').value;
     var field = document.getElementById('field').value;
     var value = document.getElementById('set-value').value;
-    if (window.j[account]===undefined) window.j[account] = {};
+    if (j[account]===undefined) j[account] = {};
     if (value === '') {
-      delete window.j[account][field];
-      if (Object.keys(window.j[account]).length === 0) {
-        delete window.j[account];
+      delete j[account][field];
+      if (Object.keys(j[account]).length === 0) {
+        delete j[account];
       }
     } else {
-      window.j[account][field] = document.getElementById('set-value').value;
+      j[account][field] = document.getElementById('set-value').value;
     }
     updateView();
     flash(document.getElementById('set-value'), 'lightgreen');
@@ -229,7 +229,7 @@ window.addEventListener('load', () => {
   window.onbeforeunload = () => {
     var changed = areThereUnsavedChanges();
     obliterate(normalizedDecryptedJ); normalizedDecryptedJ = null;
-    obliterate(window.j); window.j = null;
+    obliterate(j); j = null;
     if (changed) {
       return "There are unsaved changes. Consider saving them."
     }

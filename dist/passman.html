@@ -234,7 +234,7 @@ function only(xs) {
 var view;
 window.addEventListener('load', function () {
   view = new _secrets_view2.default(document.getElementById('view-holder'), function () {
-    return window.j;
+    return j;
   }, function () {
     return document.getElementById('account').value;
   }, function () {
@@ -255,19 +255,19 @@ function updateView() {
   });
 }
 
-window.j = null;
+var j = null;
 function isDecrypted() {
-  return window.j !== null;
+  return j !== null;
 }
 function isQueryPrecise() {
   if (!isDecrypted()) return false;
   var accountQuery = document.getElementById('account').value;
-  var accountMatches = (0, _query2.default)(accountQuery, window.j);
+  var accountMatches = (0, _query2.default)(accountQuery, j);
   if (accountMatches.length !== 1) {
     return false;
   }
   var fieldQuery = document.getElementById('field').value;
-  var fieldMatches = (0, _query2.default)(fieldQuery, window.j[accountMatches[0]]);
+  var fieldMatches = (0, _query2.default)(fieldQuery, j[accountMatches[0]]);
   return fieldMatches.length === 1;
 }
 
@@ -288,7 +288,7 @@ function normalizeJ(j) {
   });
 }
 function areThereUnsavedChanges() {
-  return JSON.stringify(normalizeJ(window.j)) !== JSON.stringify(normalizedDecryptedJ);
+  return JSON.stringify(normalizeJ(j)) !== JSON.stringify(normalizedDecryptedJ);
 }
 function unlock() {
   var em, plaintext;
@@ -304,15 +304,15 @@ function unlock() {
       return;
     });
   }).then(function () {
-    window.j = JSON.parse(plaintext);
-    normalizedDecryptedJ = normalizeJ(window.j);
+    j = JSON.parse(plaintext);
+    normalizedDecryptedJ = normalizeJ(j);
     updateView();
     document.getElementById('account').focus();
     (0, _flash.flash)(document.getElementById('unlock-button'), 'lightgreen');
   });
 }
 function copyPlaintext() {
-  (0, _copy_to_clipboard2.default)(JSON.stringify(window.j, null, 2));
+  (0, _copy_to_clipboard2.default)(JSON.stringify(j, null, 2));
   (0, _flash.flash)(document.getElementById('copy-plaintext-button'), 'lightgreen');
 }
 function download(filename, text) {
@@ -355,7 +355,7 @@ function lock() {
   }).then(function () {
     if (!!shouldContinue) {
       return Promise.resolve().then(function () {
-        return _encrypted_message2.default.create(document.getElementById('password').value, JSON.stringify(window.j));
+        return _encrypted_message2.default.create(document.getElementById('password').value, JSON.stringify(j));
       }).then(function (_resp) {
         em = _resp;
 
@@ -368,7 +368,7 @@ function lock() {
         // floating around easily inspectable until the GC runs.
 
         obliterate(normalizedDecryptedJ);normalizedDecryptedJ = null;
-        obliterate(window.j);window.j = null;
+        obliterate(j);j = null;
 
         Array.from(document.getElementsByTagName('input')).filter(function (e) {
           return e.type === 'password';
@@ -438,7 +438,7 @@ window.addEventListener('load', function () {
   });
   window.addEventListener('click', function (e) {
     if (e.target.classList.contains('copy-button')) {
-      (0, _copy_to_clipboard2.default)(window.j[e.target.getAttribute('data-account')][e.target.getAttribute('data-field')]);
+      (0, _copy_to_clipboard2.default)(j[e.target.getAttribute('data-account')][e.target.getAttribute('data-field')]);
       (0, _flash.flash)(e.target, 'lightgreen');
     }
   });
@@ -451,14 +451,14 @@ window.addEventListener('load', function () {
     var account = document.getElementById('account').value;
     var field = document.getElementById('field').value;
     var value = document.getElementById('set-value').value;
-    if (window.j[account] === undefined) window.j[account] = {};
+    if (j[account] === undefined) j[account] = {};
     if (value === '') {
-      delete window.j[account][field];
-      if (Object.keys(window.j[account]).length === 0) {
-        delete window.j[account];
+      delete j[account][field];
+      if (Object.keys(j[account]).length === 0) {
+        delete j[account];
       }
     } else {
-      window.j[account][field] = document.getElementById('set-value').value;
+      j[account][field] = document.getElementById('set-value').value;
     }
     updateView();
     (0, _flash.flash)(document.getElementById('set-value'), 'lightgreen');
@@ -467,7 +467,7 @@ window.addEventListener('load', function () {
   window.onbeforeunload = function () {
     var changed = areThereUnsavedChanges();
     obliterate(normalizedDecryptedJ);normalizedDecryptedJ = null;
-    obliterate(window.j);window.j = null;
+    obliterate(j);j = null;
     if (changed) {
       return "There are unsaved changes. Consider saving them.";
     }
