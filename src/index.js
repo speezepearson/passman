@@ -227,10 +227,7 @@ window.addEventListener('load', () => {
   })
 
   window.onbeforeunload = () => {
-    var changed = areThereUnsavedChanges();
-    obliterate(normalizedDecryptedJ); normalizedDecryptedJ = null;
-    obliterate(j); j = null;
-    if (changed) {
+    if (areThereUnsavedChanges()) {
       return "There are unsaved changes. Consider saving them."
     }
   }
