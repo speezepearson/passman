@@ -188,8 +188,6 @@ var _copy_to_clipboard = __webpack_require__(7);
 
 var _copy_to_clipboard2 = _interopRequireDefault(_copy_to_clipboard);
 
-var _goodness = __webpack_require__(8);
-
 var _encrypted_message = __webpack_require__(9);
 
 var _encrypted_message2 = _interopRequireDefault(_encrypted_message);
@@ -299,7 +297,7 @@ function unlock() {
     }).then(function (_resp) {
       plaintext = _resp;
     }).catch(function (err) {
-      (0, _goodness.makeBad)(document.getElementById('password'));
+      (0, _flash.flash)(document.getElementById('password'), 'red');
       document.getElementById('password').focus();
       return;
     });
@@ -375,7 +373,7 @@ function lock() {
         }).forEach(function (e) {
           e.value = '';
         });
-        (0, _goodness.makeBad)(document.getElementById('password'));
+        (0, _flash.flash)(document.getElementById('password'), 'red');
         document.getElementById('password').focus();
         updateView();
 
@@ -768,41 +766,7 @@ function copyToClipboard(text) {
 exports.default = copyToClipboard;
 
 /***/ }),
-/* 8 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-function makeGood(e) {
-  e.classList.add('good');
-  e.classList.remove('bad');
-}
-function makeBad(e) {
-  e.classList.add('bad');
-  e.classList.remove('good');
-}
-function doAndSetGoodness(e, f) {
-  var result;
-  try {
-    result = f();
-    makeGood(e);
-  } catch (err) {
-    makeBad(e);
-    e.focus();
-    throw err;
-  }
-  return result;
-}
-
-exports.makeBad = makeBad;
-exports.makeGood = makeGood;
-exports.doAndSetGoodness = doAndSetGoodness;
-
-/***/ }),
+/* 8 */,
 /* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 

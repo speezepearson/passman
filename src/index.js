@@ -9,7 +9,6 @@ import { flash } from './flash.js';
 import ElementContentImporter from './element_content_importer.js';
 import SecretsView from './secrets_view.js';
 import copyToClipboard from './copy_to_clipboard.js';
-import { makeGood, makeBad, doAndSetGoodness } from './goodness.js';
 import EncryptedMessage from './encrypted_message.js';
 import query from './query.js';
 
@@ -89,7 +88,7 @@ async function unlock() {
   try {
     plaintext = await em.decrypt(document.getElementById('password').value);
   } catch (err) {
-    makeBad(document.getElementById('password'));
+    flash(document.getElementById('password'), 'red');
     document.getElementById('password').focus();
     return;
   }
@@ -152,7 +151,7 @@ async function lock() {
   Array.from(document.getElementsByTagName('input'))
           .filter(e => e.type==='password')
           .forEach(e => {e.value = ''});
-  makeBad(document.getElementById('password'));
+  flash(document.getElementById('password'), 'red');
   document.getElementById('password').focus()
   updateView();
 
