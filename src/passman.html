@@ -13,15 +13,23 @@
       outline: 1px solid red;
     }
 
+    input[type=text], input[type=password] {
+      max-width: 10em;
+    }
+
     table {
       border-collapse: collapse;
     }
     th,td {
       border: 1px solid black;
+      vertical-align: text-top;
     }
 
-    #whole-file-operations {
-      margin-bottom: 2em;
+    #bulk-operations {
+      padding: 1em;
+      border-right: 1px solid black;
+      margin-right: 1em;
+      max-width: 20em;
     }
 
     .column-container {
@@ -38,45 +46,51 @@
 </head>
 <body>
 
-<div id="whole-file-operations" class="row-container">
-  <input type="password" id="password" placeholder="decryption password" />
+<table>
+  <tr>
+    <td style="padding: 1em; border: 5px solid black; height: 100%">
+      <input type="password" id="password" placeholder="decryption password" />
+      <button id="decrypt-button">Decrypt</button>
+      <button id="save-button">Save</button>
+      <div class="column-container" style="border: 1px solid black">
+        <p>Import ciphertext from other Passman file:</p>
+        <input id="import-ciphertext-file" type="file" />
+        <button id="import-ciphertext-button">Import</button>
+      </div>
+    </td>
 
-  <table>
-    <tr>
-      <td><button id="unlock-button" class="locked-only">Unlock</button></td>
-      <td><button id="copy-ciphertext-button" class="locked-only">Copy Ciphertext</button></td>
-      <td><input class="locked-only" type="file" id="import-ciphertext-file" /> to import ciphertext from other Passman file</td>
-    </tr>
-    <tr>
-      <td><button id="lock-button" class="unlocked-only">Lock</button></td>
-      <td><button id="copy-plaintext-button" class="unlocked-only">Copy Plaintext</button></td>
-    </tr>
-  </table>
-</div>
-
-  <div>
-    Take
-    <input type="text" class="query-field" id="account" placeholder="account" />
-    .
-    <input type="text" class="query-field" id="field" placeholder="field" />
-    and...
-
-    <ul>
-      <li>
-        ...copy it (by hitting Enter in one of those text fields, or clicking a button below).<br />
-        (Those text fields are regexps, except Space is replaced with "one or more characters.")
-      </li>
-      <li>
-        ...change it, by typing the new value here and hitting Enter:
-        <input type="password" id="set-value" placeholder="new value" />
-        (leave empty to delete).<br />
-        (In this case, the above fields are <i>not</i> regexps, they are exact.)
-      </li>
-    </ul>
-  </div>
-
-  Query matches:
-  <div id="view-holder"></div>
+    <td rowspan=2 style="padding: 1em; border: 5px solid black">
+      <div>
+        Query:
+        <input type="text" class="query-field" id="copy-field--account" placeholder="account" />
+        .
+        <input type="text" class="query-field" id="copy-field--field" placeholder="field" />
+        (hit Enter to copy first match)
+      </div>
+      <div>
+        Set
+        <input type="text" class="query-field" id="set-field--account" placeholder="account" />
+        .
+        <input type="text" class="query-field" id="set-field--field" placeholder="field" />
+        to
+        <input type="password" id="set-field--value" placeholder="new value" />
+        <button id="set-field-button">Set</button>
+        (or hit Enter)
+      </div>
+      <div id="view-holder"></div>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 1em; border: 5px solid black">
+      <button id="copy-plaintext-button" class="unlocked-only">Copy Plaintext</button>
+      <div class="column-container" style="border: 1px solid black">
+        <input id="import-plaintext-field" type="password" />
+        <button id="import-plaintext-button">Import Plaintext</button>
+      </div>
+      <button id="clear-button">Clear</button>
+    </td>
+  </tr>
+</table>
 
 <br />
 <hr />
@@ -86,9 +100,13 @@
   <summary><strong>Help</strong></summary>
 
   <details style="margin: 0.5em; border-left: 1px solid black; padding-left: 0.5em">
+    <summary>Tutorial</summary>
+  </details>
+
+  <details style="margin: 0.5em; border-left: 1px solid black; padding-left: 0.5em">
     <summary>I can't recover my passwords!</summary>
     <p>
-      You can use
+      If this web page isn't working for you, you can use
       <a href="https://github.com/speezepearson/passman/blob/master/recover.py">this Python script</a>
       to recover them: in a terminal, run <code>pip install cryptodomex &amp;&amp; python recover.py html &lt; &lt;this file&gt;</code>.
     </p>

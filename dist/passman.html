@@ -13,15 +13,23 @@
       outline: 1px solid red;
     }
 
+    input[type=text], input[type=password] {
+      max-width: 10em;
+    }
+
     table {
       border-collapse: collapse;
     }
     th,td {
       border: 1px solid black;
+      vertical-align: text-top;
     }
 
-    #whole-file-operations {
-      margin-bottom: 2em;
+    #bulk-operations {
+      padding: 1em;
+      border-right: 1px solid black;
+      margin-right: 1em;
+      max-width: 20em;
     }
 
     .column-container {
@@ -97,7 +105,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 3);
+/******/ 	return __webpack_require__(__webpack_require__.s = 2);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -126,30 +134,14 @@ exports.default = globals;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-function flash(e, color) {
-  var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 500;
-
-  var oldColor = e.style['outline'];
-  e.style['outline'] = '5px solid ' + color;
-  setTimeout(function () {
-    if (oldColor === undefined) delete e.style['outline'];else e.style['outline'] = oldColor;
-  }, duration);
+function escapeRegExp(str) {
+  // source: https://stackoverflow.com/a/6969486
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
 
-exports.flash = flash;
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 function query(q, obj) {
-  var regexp = new RegExp('^' + q.replace(/ /g, '.+'));
+  var pattern = q.split(' ').map(escapeRegExp).join('.+');
+  var regexp = new RegExp('^' + pattern);
   return Object.keys(obj).sort().filter(function (s) {
     return regexp.test(s);
   });
@@ -158,7 +150,7 @@ function query(q, obj) {
 exports.default = query;
 
 /***/ }),
-/* 3 */
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -172,27 +164,23 @@ var _globals = __webpack_require__(0);
 
 var _globals2 = _interopRequireDefault(_globals);
 
-var _download = __webpack_require__(4);
+var _download = __webpack_require__(3);
 
-var _flash = __webpack_require__(1);
+var _flash = __webpack_require__(4);
 
-var _element_content_importer = __webpack_require__(5);
-
-var _element_content_importer2 = _interopRequireDefault(_element_content_importer);
-
-var _secrets_view = __webpack_require__(6);
+var _secrets_view = __webpack_require__(5);
 
 var _secrets_view2 = _interopRequireDefault(_secrets_view);
 
-var _copy_to_clipboard = __webpack_require__(7);
+var _copy_to_clipboard = __webpack_require__(6);
 
 var _copy_to_clipboard2 = _interopRequireDefault(_copy_to_clipboard);
 
-var _encrypted_message = __webpack_require__(9);
+var _encrypted_message = __webpack_require__(7);
 
 var _encrypted_message2 = _interopRequireDefault(_encrypted_message);
 
-var _query = __webpack_require__(2);
+var _query = __webpack_require__(1);
 
 var _query2 = _interopRequireDefault(_query);
 
@@ -203,6 +191,8 @@ globals.window = window;
 globals.document = document;
 
 window.addEventListener('load', _download.takeSnapshot);
+
+var decryptedJ = null;
 
 function obliterate(x) {
   if (Array.isArray(x)) {
@@ -234,61 +224,33 @@ window.addEventListener('load', function () {
   view = new _secrets_view2.default(document.getElementById('view-holder'), function () {
     return j;
   }, function () {
-    return document.getElementById('account').value;
+    return document.getElementById('copy-field--account').value;
   }, function () {
-    return document.getElementById('field').value;
+    return document.getElementById('copy-field--field').value;
   });
 });
 
 function updateView() {
   view.refresh();
-  Object.entries({ 'unlocked-only': isDecrypted(), 'locked-only': !isDecrypted() }).forEach(function (_ref3) {
-    var _ref4 = _slicedToArray(_ref3, 2),
-        className = _ref4[0],
-        enabled = _ref4[1];
-
-    Array.from(document.getElementsByClassName(className)).forEach(function (e) {
-      e.disabled = !enabled;
-    });
-  });
 }
 
-var j = null;
-function isDecrypted() {
-  return j !== null;
-}
-function isQueryPrecise() {
-  if (!isDecrypted()) return false;
-  var accountQuery = document.getElementById('account').value;
-  var accountMatches = (0, _query2.default)(accountQuery, j);
-  if (accountMatches.length !== 1) {
-    return false;
-  }
-  var fieldQuery = document.getElementById('field').value;
-  var fieldMatches = (0, _query2.default)(fieldQuery, j[accountMatches[0]]);
-  return fieldMatches.length === 1;
-}
+var j = {};
 
-// I'd like to only store a fingerprint,
-//  but all the crypto stuff is asynchronous,
-//  which means we couldn't check the fingerprint when the page is closed.
-// I think this is the lesser of two evils,
-//  since we're storing j in plaintext anyway.
-var normalizedDecryptedJ = null;
 function normalizeJ(j) {
-  window.areThereUnsavedChanges = areThereUnsavedChanges;
-  return Object.entries(j).sort().map(function (_ref5) {
-    var _ref6 = _slicedToArray(_ref5, 2),
-        k = _ref6[0],
-        v = _ref6[1];
+  return Object.entries(j).sort().map(function (_ref3) {
+    var _ref4 = _slicedToArray(_ref3, 2),
+        k = _ref4[0],
+        v = _ref4[1];
 
     return [k, Object.entries(v).sort()];
   });
 }
-function areThereUnsavedChanges() {
-  return JSON.stringify(normalizeJ(j)) !== JSON.stringify(normalizedDecryptedJ);
+var normalizedDecryptedJ = null;
+
+function thereAreUnsavedChanges() {
+  return Object.keys(j).length > 0 && JSON.stringify(normalizeJ(j)) != JSON.stringify(normalizedDecryptedJ);
 }
-function unlock() {
+function decrypt() {
   var em, plaintext;
   return Promise.resolve().then(function () {
     em = _encrypted_message2.default.deserialize(document.getElementById('encrypted-message').innerText);
@@ -302,11 +264,10 @@ function unlock() {
       return;
     });
   }).then(function () {
-    j = JSON.parse(plaintext);
-    normalizedDecryptedJ = normalizeJ(j);
+    mergeJs(j, JSON.parse(plaintext));
     updateView();
-    document.getElementById('account').focus();
-    (0, _flash.flash)(document.getElementById('unlock-button'), 'lightgreen');
+    document.getElementById('copy-field--account').focus();
+    (0, _flash.flash)(document.getElementById('decrypt-button'), 'lightgreen');
   });
 }
 function copyPlaintext() {
@@ -330,13 +291,8 @@ function download(filename, text) {
 function copyCiphertext() {
   (0, _copy_to_clipboard2.default)(JSON.stringify(_encrypted_message2.default.deserialize(document.getElementById('encrypted-message').innerText).toJSONFriendlyObject()));
 }
-function downloadNewPassman() {
-  return Promise.resolve().then(function () {
-    (0, _download.downloadThisPageWithNewEncryptedMessage)(_encrypted_message2.default.deserialize(document.getElementById('encrypted-message').innerText));
-  });
-}
-function lock() {
-  var password, shouldContinue, oldJ, em, changed;
+function save() {
+  var password, shouldContinue, oldJ, em;
   return Promise.resolve().then(function () {
     password = document.getElementById('password').value;
     shouldContinue = true;
@@ -345,45 +301,28 @@ function lock() {
     }).then(function (_resp) {
       oldJ = JSON.parse(_resp);
     }).catch(function (err) {
+      debugger;
       if (err.name !== 'OperationError') {
         throw err;
       }
-      shouldContinue = confirm("You are about to lock the document with a different password than you started with! Make sure that's what you want.");
+      shouldContinue = confirm("You are about to download a passman file with a different password than the original one! Is that what you want?");
     });
   }).then(function () {
     if (!!shouldContinue) {
-      return Promise.resolve().then(function () {
-        return _encrypted_message2.default.create(document.getElementById('password').value, JSON.stringify(j));
-      }).then(function (_resp) {
-        em = _resp;
 
-        document.getElementById('encrypted-message').innerText = em.serialize();
+      if (password.length < 6) {
+        shouldContinue = confirm('You password is only ' + password.length + ' characters long. I won\'t stop you, but please, MAKE REAL SURE THIS IS INTENTIONAL before saving.');
+      }
+      if (!!shouldContinue) {
+        return Promise.resolve().then(function () {
+          return _encrypted_message2.default.create(password, JSON.stringify(j));
+        }).then(function (_resp) {
+          em = _resp;
 
-        changed = areThereUnsavedChanges();
-
-        // Probably a dumb threat model, but:
-        // modify objects in-place as much as possible so they're not just
-        // floating around easily inspectable until the GC runs.
-
-        obliterate(normalizedDecryptedJ);normalizedDecryptedJ = null;
-        obliterate(j);j = null;
-
-        Array.from(document.getElementsByTagName('input')).filter(function (e) {
-          return e.type === 'password';
-        }).forEach(function (e) {
-          e.value = '';
+          (0, _download.downloadThisPageWithNewEncryptedMessage)(em);
+          (0, _flash.flash)(document.getElementById('save-button'), 'lightgreen');
         });
-        (0, _flash.flash)(document.getElementById('password'), 'red');
-        document.getElementById('password').focus();
-        updateView();
-
-        if (changed) {
-          if (confirm('You changed something; would you like to download your new passwords as a new file?')) {
-            downloadNewPassman();
-          }
-        }
-        (0, _flash.flash)(document.getElementById('lock-button'), 'lightgreen');
-      });
+      }
     }
   }).then(function () {});
 }
@@ -395,33 +334,130 @@ function onEnter(element, callback) {
     }
   });
 }
-
-var importedEncryptedMessage;
-function onImportCiphertextFileSelect() {
-  var file, ciphertext;
+function importCiphertext() {
+  var file, html, doc, text, em, importedJ;
   return Promise.resolve().then(function () {
     file = document.getElementById('import-ciphertext-file').files[0];
 
-    if (!(file === undefined)) {
+    if (file === undefined) {
+      (0, _flash.flash)(document.getElementById('import-ciphertext-file'), 'red');
+    } else {
       return Promise.resolve().then(function () {
-        return extractElementTextFromFile(file, 'encrypted-message');
+        return new Promise(function (resolve, reject) {
+          var reader = new FileReader();
+          reader.onload = function (e) {
+            try {
+              resolve(e.target.result);
+            } catch (err) {
+              $this.fileInput.value = [];
+              reject(err);
+            }
+          };
+          reader.readAsText(file);
+        });
       }).then(function (_resp) {
-        ciphertext = _resp;
+        html = _resp;
 
-        importedEncryptedMessage = _encrypted_message2.default.deserialize(ciphertext);
+        try {
+          doc = new DOMParser().parseFromString(html, 'text/html');
+        } catch (err) {
+          (0, _flash.flash)(document.getElementById('import-ciphertext-file'), 'red');
+          throw err;
+        }
+
+        try {
+          text = doc.getElementById('encrypted-message').innerText;
+        } catch (err) {
+          (0, _flash.flash)(document.getElementById('import-ciphertext-file'), 'red');
+          throw err;
+        }
+
+        try {
+          em = _encrypted_message2.default.deserialize(text);
+        } catch (err) {
+          (0, _flash.flash)(document.getElementById('import-ciphertext-file'), 'red');
+          throw err;
+        }
+
+        return Promise.resolve().then(function () {
+          return em.decrypt(document.getElementById('password').value);
+        }).then(function (_resp) {
+          importedJ = JSON.parse(_resp);
+        }).catch(function (err) {
+          (0, _flash.flash)(document.getElementById('password'), 'red');
+          throw err;
+        });
+      }).then(function () {
+
+        mergeJs(j, importedJ);
+        updateView();
       });
     }
   }).then(function () {});
 }
-function importCiphertext() {
-  document.getElementById('encrypted-message').innerText = importedEncryptedMessage.serialize();
+
+function importPlaintext() {
+  mergeJs(j, JSON.parse(document.getElementById('import-plaintext-field').value)); // todo validate
+  updateView();
+}
+
+function clear() {
+  if (j === null) {
+    j = {};
+  } else {
+    obliterate(j);
+  }
+  updateView();
+}
+
+function mergeJs(target, newJ) {
+  Object.entries(newJ).forEach(function (_ref5) {
+    var _ref6 = _slicedToArray(_ref5, 2),
+        account = _ref6[0],
+        info = _ref6[1];
+
+    if (target[account] === undefined) {
+      target[account] = {};
+    }
+    Object.assign(target[account], info);
+  });
+}
+
+function bulkImport() {
+  var importedJ = JSON.parse($('#bulk-import-field').value);
+  mergeJs(j, importedJ);
+}
+
+function setField() {
+  var _map = ['account', 'field', 'value'].map(function (f) {
+    return document.getElementById('set-field--' + f).value;
+  }),
+      _map2 = _slicedToArray(_map, 3),
+      account = _map2[0],
+      field = _map2[1],
+      value = _map2[2];
+
+  if (j[account] === undefined) j[account] = {};
+  if (value === '') {
+    delete j[account][field];
+    if (Object.keys(j[account]).length === 0) {
+      delete j[account];
+    }
+  } else {
+    j[account][field] = document.getElementById('set-field--value').value;
+  }
+  updateView();
+  (0, _flash.flash)(document.getElementById('set-field--value'), 'lightgreen');
 }
 
 window.addEventListener('load', function () {
-  Object.entries({ 'unlock-button': unlock,
-    'lock-button': lock,
+  Object.entries({ 'decrypt-button': decrypt,
+    'save-button': save,
     'copy-plaintext-button': copyPlaintext,
-    'copy-ciphertext-button': copyCiphertext }).forEach(function (_ref7) {
+    'clear-button': clear,
+    'import-plaintext-button': importPlaintext,
+    'import-ciphertext-button': importCiphertext,
+    'set-field-button': setField }).forEach(function (_ref7) {
     var _ref8 = _slicedToArray(_ref7, 2),
         id = _ref8[0],
         clickCallback = _ref8[1];
@@ -443,33 +479,20 @@ window.addEventListener('load', function () {
 
   document.getElementById('password').focus();
   onEnter(document.getElementById('password'), function () {
-    document.getElementById(isDecrypted() ? 'lock-button' : 'unlock-button').click();
+    document.getElementById('decrypt-button').click();
   });
-  onEnter(document.getElementById('set-value'), function () {
-    var account = document.getElementById('account').value;
-    var field = document.getElementById('field').value;
-    var value = document.getElementById('set-value').value;
-    if (j[account] === undefined) j[account] = {};
-    if (value === '') {
-      delete j[account][field];
-      if (Object.keys(j[account]).length === 0) {
-        delete j[account];
-      }
-    } else {
-      j[account][field] = document.getElementById('set-value').value;
-    }
-    updateView();
-    (0, _flash.flash)(document.getElementById('set-value'), 'lightgreen');
+  onEnter(document.getElementById('set-field--value'), function () {
+    document.getElementById('set-field-button').click();
   });
 
   window.onbeforeunload = function () {
-    if (areThereUnsavedChanges()) {
+    if (thereAreUnsavedChanges()) {
       return "There are unsaved changes. Consider saving them.";
     }
   };
 
-  window.ciphertextImporter = new _element_content_importer2.default(document.getElementById('encrypted-message'), document.getElementById('import-ciphertext-file'), _encrypted_message2.default.deserialize);
-  [document.getElementById('field'), document.getElementById('account')].forEach(function (el) {
+  ['account', 'field'].forEach(function (f) {
+    var el = document.getElementById('copy-field--' + f);
     onEnter(el, function () {
       document.getElementsByClassName('copy-button')[0].click();el.focus();
     });
@@ -478,7 +501,7 @@ window.addEventListener('load', function () {
 });
 
 /***/ }),
-/* 4 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -528,7 +551,7 @@ exports.takeSnapshot = takeSnapshot;
 exports.downloadThisPageWithNewEncryptedMessage = downloadThisPageWithNewEncryptedMessage;
 
 /***/ }),
-/* 5 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -537,65 +560,20 @@ exports.downloadThisPageWithNewEncryptedMessage = downloadThisPageWithNewEncrypt
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+function flash(e, color) {
+  var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 500;
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+  var oldColor = e.style['outline'];
+  e.style['outline'] = '5px solid ' + color;
+  setTimeout(function () {
+    if (oldColor === undefined) delete e.style['outline'];else e.style['outline'] = oldColor;
+  }, duration);
+}
 
-var _flash = __webpack_require__(1);
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var ElementContentImporter = function () {
-  function ElementContentImporter(target, fileInput) {
-    var validate = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : function () {};
-
-    _classCallCheck(this, ElementContentImporter);
-
-    this.target = target;
-    this.fileInput = fileInput;
-    this.validate = validate;
-
-    var $this = this;
-    this.fileInput.addEventListener('input', function (e) {
-      $this.importFromFile(e.target.files[0]).then(function () {
-        (0, _flash.flash)(e.target, 'green');
-      }, function (err) {
-        alert('import failed: ' + err);(0, _flash.flash)(e.target, 'red');
-      });
-    });
-  }
-
-  _createClass(ElementContentImporter, [{
-    key: 'importFromFile',
-    value: function importFromFile(file) {
-      var $this = this;
-      return new Promise(function (resolve, reject) {
-        if (file === undefined) return;
-        var reader = new FileReader();
-        reader.onload = function (loadEvent) {
-          try {
-            var html = loadEvent.target.result;
-            var doc = new DOMParser().parseFromString(html, 'text/html');
-            var text = doc.getElementById($this.target.id).innerText;
-            $this.validate(text);
-            $this.target.innerText = text;
-            resolve();
-          } catch (err) {
-            $this.fileInput.value = [];
-            reject(err);
-          }
-        };
-        reader.readAsText(file);
-      });
-    }
-  }]);
-
-  return ElementContentImporter;
-}();
-
-exports.default = ElementContentImporter;
+exports.flash = flash;
 
 /***/ }),
-/* 6 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -609,7 +587,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _query = __webpack_require__(2);
+var _query = __webpack_require__(1);
 
 var _query2 = _interopRequireDefault(_query);
 
@@ -688,7 +666,7 @@ var SecretsView = function () {
 exports.default = SecretsView;
 
 /***/ }),
-/* 7 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -766,8 +744,7 @@ function copyToClipboard(text) {
 exports.default = copyToClipboard;
 
 /***/ }),
-/* 8 */,
-/* 9 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -945,45 +922,51 @@ exports.default = EncryptedMessage;
 /******/ ]);</script></head>
 <body>
 
-<div id="whole-file-operations" class="row-container">
-  <input type="password" id="password" placeholder="decryption password" />
+<table>
+  <tr>
+    <td style="padding: 1em; border: 5px solid black; height: 100%">
+      <input type="password" id="password" placeholder="decryption password" />
+      <button id="decrypt-button">Decrypt</button>
+      <button id="save-button">Save</button>
+      <div class="column-container" style="border: 1px solid black">
+        <p>Import ciphertext from other Passman file:</p>
+        <input id="import-ciphertext-file" type="file" />
+        <button id="import-ciphertext-button">Import</button>
+      </div>
+    </td>
 
-  <table>
-    <tr>
-      <td><button id="unlock-button" class="locked-only">Unlock</button></td>
-      <td><button id="copy-ciphertext-button" class="locked-only">Copy Ciphertext</button></td>
-      <td><input class="locked-only" type="file" id="import-ciphertext-file" /> to import ciphertext from other Passman file</td>
-    </tr>
-    <tr>
-      <td><button id="lock-button" class="unlocked-only">Lock</button></td>
-      <td><button id="copy-plaintext-button" class="unlocked-only">Copy Plaintext</button></td>
-    </tr>
-  </table>
-</div>
-
-  <div>
-    Take
-    <input type="text" class="query-field" id="account" placeholder="account" />
-    .
-    <input type="text" class="query-field" id="field" placeholder="field" />
-    and...
-
-    <ul>
-      <li>
-        ...copy it (by hitting Enter in one of those text fields, or clicking a button below).<br />
-        (Those text fields are regexps, except Space is replaced with "one or more characters.")
-      </li>
-      <li>
-        ...change it, by typing the new value here and hitting Enter:
-        <input type="password" id="set-value" placeholder="new value" />
-        (leave empty to delete).<br />
-        (In this case, the above fields are <i>not</i> regexps, they are exact.)
-      </li>
-    </ul>
-  </div>
-
-  Query matches:
-  <div id="view-holder"></div>
+    <td rowspan=2 style="padding: 1em; border: 5px solid black">
+      <div>
+        Query:
+        <input type="text" class="query-field" id="copy-field--account" placeholder="account" />
+        .
+        <input type="text" class="query-field" id="copy-field--field" placeholder="field" />
+        (hit Enter to copy first match)
+      </div>
+      <div>
+        Set
+        <input type="text" class="query-field" id="set-field--account" placeholder="account" />
+        .
+        <input type="text" class="query-field" id="set-field--field" placeholder="field" />
+        to
+        <input type="password" id="set-field--value" placeholder="new value" />
+        <button id="set-field-button">Set</button>
+        (or hit Enter)
+      </div>
+      <div id="view-holder"></div>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 1em; border: 5px solid black">
+      <button id="copy-plaintext-button" class="unlocked-only">Copy Plaintext</button>
+      <div class="column-container" style="border: 1px solid black">
+        <input id="import-plaintext-field" type="password" />
+        <button id="import-plaintext-button">Import Plaintext</button>
+      </div>
+      <button id="clear-button">Clear</button>
+    </td>
+  </tr>
+</table>
 
 <br />
 <hr />
@@ -993,9 +976,13 @@ exports.default = EncryptedMessage;
   <summary><strong>Help</strong></summary>
 
   <details style="margin: 0.5em; border-left: 1px solid black; padding-left: 0.5em">
+    <summary>Tutorial</summary>
+  </details>
+
+  <details style="margin: 0.5em; border-left: 1px solid black; padding-left: 0.5em">
     <summary>I can't recover my passwords!</summary>
     <p>
-      You can use
+      If this web page isn't working for you, you can use
       <a href="https://github.com/speezepearson/passman/blob/master/recover.py">this Python script</a>
       to recover them: in a terminal, run <code>pip install cryptodomex &amp;&amp; python recover.py html &lt; &lt;this file&gt;</code>.
     </p>
