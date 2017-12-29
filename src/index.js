@@ -5,13 +5,15 @@ globals.document = document;
 import { takeSnapshot, downloadThisPageWithNewEncryptedMessage } from './download.js';
 window.addEventListener('load', takeSnapshot);
 
-import { flash } from './flash.js';
+import { Flasher } from './flash.js';
 import SecretsView from './secrets_view.js';
 import copyToClipboard from './copy_to_clipboard.js';
 import EncryptedMessage from './encrypted_message.js';
 import query from './query.js';
 
 var decryptedJ = null;
+
+var flasher;
 
 function obliterate(x) {
   if (Array.isArray(x)) {
@@ -66,18 +68,27 @@ async function decrypt() {
   try {
     plaintext = await em.decrypt(document.getElementById('password').value);
   } catch (err) {
-    flash(document.getElementById('password'), 'red');
+    flasher.flash(document.getElementById('password'), 'red', `
+      Tried to decrypt the ciphertext in this HTML file, but password was incorrect.
+      (error: ${err})
+    `);
     document.getElementById('password').focus();
     return;
   }
-  mergeJs(j, JSON.parse(plaintext));
+  var decryptedJ = JSON.parse(plaintext);
+  mergeJs(j, decryptedJ);
+  normalizedDecryptedJ = normalizeJ(decryptedJ);
   updateView();
   document.getElementById('copy-field--account').focus();
-  flash(document.getElementById('decrypt-button'), 'lightgreen');
+  flasher.flash(document.getElementById('decrypt-button'), 'lightgreen', `
+    Decrypted the ciphertext embedded in this HTML file, and merged it into working memory.
+  `);
 }
 function copyPlaintext() {
   copyToClipboard(JSON.stringify(j, null, 2));
-  flash(document.getElementById('copy-plaintext-button'), 'lightgreen');
+  flasher.flash(document.getElementById('copy-plaintext-button'), 'lightgreen', `
+    Copied entire working memory to clipboard, as JSON.
+  `);
 }
 function download(filename, text) {
   // adapted from: https://stackoverflow.com/a/18197511/8877656
@@ -104,22 +115,33 @@ async function save() {
   try {
     oldJ = JSON.parse(await EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText).decrypt(password));
   } catch (err) {
-    debugger
     if (err.name !== 'OperationError') {
+      flasher.flash(document.getElementById('save-button'), 'red', `
+        Something REAL WEIRD happened while checking whether the password you entered matched the one for this file.
+        This should never happen.
+      `);
       throw err;
     }
     shouldContinue = confirm("You are about to download a passman file with a different password than the original one! Is that what you want?");
   }
-  if (!shouldContinue) return;
+  if (!shouldContinue) {
+    flasher.flash(document.getElementById('save-button'), 'red', 'Would have saved, but you aborted.');
+    return;
+  }
 
   if (password.length < 6) {
     shouldContinue = confirm(`You password is only ${password.length} characters long. I won't stop you, but please, MAKE REAL SURE THIS IS INTENTIONAL before saving.`);
   }
-  if (!shouldContinue) return;
+  if (!shouldContinue) {
+    flasher.flash(document.getElementById('save-button'), 'red', 'Would have saved, but you aborted.');
+    return;
+  }
 
   var em = await EncryptedMessage.create(password, JSON.stringify(j));
   downloadThisPageWithNewEncryptedMessage(em);
-  flash(document.getElementById('save-button'), 'lightgreen');
+  flasher.flash(document.getElementById('save-button'), 'lightgreen', `
+    Downloaded a clone of this HTML file, except the ciphertext encodes this page's current working memory.
+  `);
 }
 
 function onEnter(element, callback) {
@@ -132,7 +154,10 @@ function onEnter(element, callback) {
 async function importCiphertext() {
   var file = document.getElementById('import-ciphertext-file').files[0];
   if (file === undefined) {
-    flash(document.getElementById('import-ciphertext-file'), 'red');
+    flasher.flash(document.getElementById('import-ciphertext-file'), 'red', `
+      Tried to merge the ciphertext from another Passman file into working memory,
+      but no file was selected.
+    `);
     return;
   }
   var html = await new Promise((resolve, reject) => {
@@ -148,57 +173,72 @@ async function importCiphertext() {
     reader.readAsText(file);
   });
 
-  var doc;
-  try {
-    doc = new DOMParser().parseFromString(html, 'text/html');
-  } catch (err) {
-    flash(document.getElementById('import-ciphertext-file'), 'red');
-    throw err;
-  }
+  var doc = flasher.doOrFlashRed(
+    () => {doc = new DOMParser().parseFromString(html, 'text/html')},
+    document.getElementById('import-ciphertext-file'),
+    "Tried to merge the ciphertext from another Passman file into working memory, but selected file couldn't be parsed as HTML."
+  );
+  var text = flasher.doOrFlashRed(
+    () => {doc.getElementById('encrypted-message').innerText},
+    document.getElementById('import-ciphertext-file'),
+    "Tried to merge the ciphertext from another Passman file into working memory, but there was no element with id='encrypted-message'."
+  );
+  var text = flasher.doOrFlashRed(
+    () => {EncryptedMessage.deserialize(text)},
+    document.getElementById('import-ciphertext-file'),
+    "Tried to merge the ciphertext from another Passman file into working memory, but couldn't parse the ciphertext from it (this is extra weird -- maybe I made a non-backwards-compatible change to the encrypted-message format?)."
+  );
+  var importedPlaintext = flasher.awaitOrFlashRed(
+    em.decrypt(document.getElementById('import-ciphertext-password').value),
+    document.getElementById('import-ciphertext-password'),
+    "Tried to merge the ciphertext from another Passman file into working memory, but password was wrong to decrypt the other file's ciphertext."
+  );
+  var importedJ = flasher.doOrFlashRed(
+    () => {JSON.parse(importedPlaintext);},
+    document.getElementById('import-ciphertext-password'),
+    "Tried to merge the ciphertext from another Passman file into working memory, but failed to parse the JSON. (This is REALLY WEIRD.)"
+  );
 
-  var text;
-  try {
-    text = doc.getElementById('encrypted-message').innerText;
-  } catch (err) {
-    flash(document.getElementById('import-ciphertext-file'), 'red');
-    throw err;
-  }
-
-  var em;
-  try {
-    em = EncryptedMessage.deserialize(text);
-  } catch (err) {
-    flash(document.getElementById('import-ciphertext-file'), 'red');
-    throw err;
-  }
-
-  var importedJ;
-  try {
-    importedJ = JSON.parse(await em.decrypt(document.getElementById('password').value));
-  } catch (err) {
-    flash(document.getElementById('password'), 'red');
-    throw err;
-  }
-
-  mergeJs(j, importedJ);
+  flasher.doOrFlashRed(
+    () => mergeJs(j, importedJ),
+    document.getElementById('import-ciphertext-button'),
+    "Tried to merge the ciphertext from another Passman file into working memory, but the decrypted JSON object from the other file doesn't have the expected shape. (This is REALLY WEIRD.)"
+  );
   updateView();
+  flasher.flash(document.getElementById('password'), 'lightgreen', `
+    Merged the ciphertext from another Passman file into working memory.
+  `);
 }
 
 function importPlaintext() {
-  mergeJs(j, JSON.parse(document.getElementById('import-plaintext-field').value)) // todo validate
+  var importedJ = flasher.doOrFlashRed(
+    () => JSON.parse(document.getElementById('import-plaintext-field').value),
+    document.getElementById('import-plaintext-field'),
+    "Tried to merge the 'Import JSON' field into working memory, but failed to parse the JSON."
+  );
+  flasher.doOrFlashRed(
+    () => mergeJs(j, importedJ),
+    document.getElementById('import-plaintext-button'),
+    `Tried to merge the 'Import JSON' field into working memory, but the JSON object you pasted in doesn't have the expected shape. (It should be an exactly-two-level object whose leaf values are strings, like {"a": {"b": "c"}}, and not like {"a": {"b": ["c"]}} or {"a": {"b": 3}} or {"a": {"b": {}}}.)`
+  )
   updateView();
+  flasher.flash(document.getElementById('import-plaintext-button'), 'lightgreen', `
+    Merged the JSON from the "import plaintext" field into working memory.
+  `);
 }
 
-function clear() {
-  if (j === null) {
-    j = {};
-  } else {
-    obliterate(j);
-  }
-  updateView();
+function validJOrThrow(j) {
+  if (typeof j !== 'object') throw 'not an object';
+  Object.entries(j).forEach(([k, sub]) => {
+    if (typeof sub !== 'object') throw `key ${JSON.stringify(k)} maps to non-object`;
+    Object.entries(sub).forEach(([field, value]) => {
+      if (typeof value !== 'string') throw `field ${JSON.stringify(k)}.${JSON.stringify(field)} has type ${typeof value}, not string`
+    })
+  });
 }
-
 function mergeJs(target, newJ) {
+  validJOrThrow(target);
+  validJOrThrow(newJ);
   Object.entries(newJ).forEach(([account, info]) => {
     if (target[account] === undefined) {
       target[account] = {};
@@ -225,14 +265,15 @@ function setField() {
     j[account][field] = document.getElementById('set-field--value').value;
   }
   updateView();
-  flash(document.getElementById('set-field--value'), 'lightgreen');
+  flasher.flash(document.getElementById('set-field--value'), 'lightgreen', `
+    Set ${account}.${field}
+  `);
 }
 
 window.addEventListener('load', () => {
   Object.entries({'decrypt-button': decrypt,
                   'save-button': save,
                   'copy-plaintext-button': copyPlaintext,
-                  'clear-button': clear,
                   'import-plaintext-button': importPlaintext,
                   'import-ciphertext-button': importCiphertext,
                   'set-field-button': setField})
@@ -248,8 +289,12 @@ window.addEventListener('load', () => {
   });
   window.addEventListener('click', (e) => {
     if (e.target.classList.contains('copy-button')) {
-      copyToClipboard(j[e.target.getAttribute('data-account')][e.target.getAttribute('data-field')]);
-      flash(e.target, 'lightgreen')
+      var account = e.target.getAttribute('data-account');
+      var field = e.target.getAttribute('data-field');
+      copyToClipboard(j[account][field]);
+      flasher.flash(e.target, 'lightgreen', `
+        Copied ${field} for ${account} to clipboard.
+      `);
     }
   });
 
@@ -268,4 +313,6 @@ window.addEventListener('load', () => {
     onEnter(el, () => {document.getElementsByClassName('copy-button')[0].click(); el.focus()});
   });
   updateView();
+
+  flasher = new Flasher(document.getElementById('status'));
 });

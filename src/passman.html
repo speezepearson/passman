@@ -42,52 +42,73 @@
       flex-direction: row;
       align-items: center;
     }
+
+    /* source: https://stackoverflow.com/a/6497462 */
+    .horizontal-viewport-wrapper { overflow: scroll; width: 100%; height: 4em; }
+    .horizontal-viewport { width: 200em; }
   </style>
 </head>
 <body>
 
+<!-- adapted from: https://stackoverflow.com/a/6497462 -->
+<div class="horizontal-viewport-wrapper">
+  <div id="status" class="horizontal-viewport">
+  </div>
+</div>
+
 <table>
   <tr>
-    <td style="padding: 1em; border: 5px solid black; height: 100%">
+    <td style="padding: 1em; border: 5px solid black; height: 1px; width: 50%">
       <input type="password" id="password" placeholder="decryption password" />
       <button id="decrypt-button">Decrypt</button>
       <button id="save-button">Save</button>
-      <div class="column-container" style="border: 1px solid black">
-        <p>Import ciphertext from other Passman file:</p>
-        <input id="import-ciphertext-file" type="file" />
-        <button id="import-ciphertext-button">Import</button>
-      </div>
     </td>
 
-    <td rowspan=2 style="padding: 1em; border: 5px solid black">
-      <div>
-        Query:
-        <input type="text" class="query-field" id="copy-field--account" placeholder="account" />
-        .
-        <input type="text" class="query-field" id="copy-field--field" placeholder="field" />
-        (hit Enter to copy first match)
-      </div>
-      <div>
-        Set
-        <input type="text" class="query-field" id="set-field--account" placeholder="account" />
-        .
-        <input type="text" class="query-field" id="set-field--field" placeholder="field" />
-        to
-        <input type="password" id="set-field--value" placeholder="new value" />
-        <button id="set-field-button">Set</button>
-        (or hit Enter)
-      </div>
+    <td rowspan="3" style="padding: 1em; border: 5px solid black; height: 100%; width: 50%">
       <div id="view-holder"></div>
     </td>
   </tr>
   <tr>
+    <td style="padding: 1em; border: 5px solid black; height: 100%">
+      <strong>Query Working Memory</strong>
+      <ul>
+        <li>
+          Filter working memory: <br />
+          <input type="text" class="query-field" id="copy-field--account" placeholder="account" /><input type="text" class="query-field" id="copy-field--field" placeholder="field" />
+
+          <ul>
+            <li>(queries must match beginnings of account/field names)</li>
+            <li>(Space means "1 or more characters", so e.g. "a z" would match "amazon")</li>
+            <li>(hit Enter to copy first match)</li>
+          </ul>
+        </li>
+        <li>
+          <button id="copy-plaintext-button" class="unlocked-only">Copy Working Memory as JSON</button>
+        </li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
     <td style="padding: 1em; border: 5px solid black">
-      <button id="copy-plaintext-button" class="unlocked-only">Copy Plaintext</button>
-      <div class="column-container" style="border: 1px solid black">
-        <input id="import-plaintext-field" type="password" />
-        <button id="import-plaintext-button">Import Plaintext</button>
-      </div>
-      <button id="clear-button">Clear</button>
+      <strong>Update Working Memory</strong>
+      <ul>
+        <li style="border: 1px solid black; margin-bottom: 1em">
+          Set
+          <input type="text" class="query-field" id="set-field--account" placeholder="account" /><input type="text" class="query-field" id="set-field--field" placeholder="field" />
+          to
+          <input type="password" id="set-field--value" placeholder="new value" />
+          <button id="set-field-button">Set</button>
+        </li>
+        <li style="border: 1px solid black; margin-bottom: 1em">
+          <button id="import-plaintext-button">Import JSON</button> by pasting it here:
+          <input id="import-plaintext-field" type="password" />
+        </li>
+        <li style="border: 1px solid black; margin-bottom: 1em">
+          <button id="import-ciphertext-button">Decrypt and Import</button> another Passman file: <br/>
+          <input id="import-ciphertext-password" type="password" placeholder="decryption password" />
+          <input id="import-ciphertext-file" type="file" />
+        </li>
+      </ul>
     </td>
   </tr>
 </table>
@@ -101,6 +122,7 @@
 
   <details style="margin: 0.5em; border-left: 1px solid black; padding-left: 0.5em">
     <summary>Tutorial</summary>
+    TODO
   </details>
 
   <details style="margin: 0.5em; border-left: 1px solid black; padding-left: 0.5em">

@@ -5,7 +5,7 @@ function escapeRegExp(str) {
 
 function query(q, obj) {
   var pattern = q.split(' ').map(escapeRegExp).join('.+')
-  var regexp = new RegExp('^' + pattern);
+  var regexp = new RegExp('^' + pattern, 'i');
   return Object.keys(obj).sort().filter(s => regexp.test(s));
 }
 

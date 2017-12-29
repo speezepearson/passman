@@ -19,6 +19,10 @@ function filterJ(j, q1, q2) {
   return result;
 }
 
+function nFields(j) {
+  return [].concat.apply([], Object.values(j).map(v => Object.keys(v))).length
+}
+
 
 class SecretsView {
   constructor(element, getData, getAccountQ, getFieldQ) {
@@ -30,13 +34,13 @@ class SecretsView {
 
   refresh() {
     this.element.innerHTML = '';
-    var j = filterJ(this.getData(), this.getAccountQ(), this.getFieldQ());
-    if (j === null || Object.keys(j).length === 0) return;
+    var unfilteredJ = this.getData()
+    var j = filterJ(unfilteredJ, this.getAccountQ(), this.getFieldQ());
 
     var table = appendNewChild(globals.document.getElementById('view-holder'), 'table');
     var headerRow = appendNewChild(table, 'tr');
-    appendNewChild(headerRow, 'th').innerText = 'Account';
-    appendNewChild(headerRow, 'th').innerText = 'Copy';
+    appendNewChild(headerRow, 'th').innerText = `${Object.keys(j).length}/${Object.keys(unfilteredJ).length} accounts match`;
+    appendNewChild(headerRow, 'th').innerText = `${nFields(j)}/${nFields(unfilteredJ)} fields match`;
     Object.entries(j).forEach(([account, info]) => {
       var tr = appendNewChild(table, 'tr');
       appendNewChild(tr, 'td').innerText = account;
