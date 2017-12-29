@@ -90,21 +90,6 @@ function copyPlaintext() {
     Copied entire working memory to clipboard, as JSON.
   `);
 }
-function download(filename, text) {
-  // adapted from: https://stackoverflow.com/a/18197511/8877656
-  var pom = document.createElement('a');
-  pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-  pom.setAttribute('download', filename);
-
-  if (document.createEvent) {
-    var event = document.createEvent('MouseEvents');
-    event.initEvent('click', true, true);
-    pom.dispatchEvent(event);
-  }
-  else {
-    pom.click();
-  }
-}
 function copyCiphertext() {
   copyToClipboard(JSON.stringify(EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText).toJSONFriendlyObject()));
 }

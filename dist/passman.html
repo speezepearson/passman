@@ -283,20 +283,6 @@ function copyPlaintext() {
   (0, _copy_to_clipboard2.default)(JSON.stringify(j, null, 2));
   flasher.flash(document.getElementById('copy-plaintext-button'), 'lightgreen', '\n    Copied entire working memory to clipboard, as JSON.\n  ');
 }
-function download(filename, text) {
-  // adapted from: https://stackoverflow.com/a/18197511/8877656
-  var pom = document.createElement('a');
-  pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-  pom.setAttribute('download', filename);
-
-  if (document.createEvent) {
-    var event = document.createEvent('MouseEvents');
-    event.initEvent('click', true, true);
-    pom.dispatchEvent(event);
-  } else {
-    pom.click();
-  }
-}
 function copyCiphertext() {
   (0, _copy_to_clipboard2.default)(JSON.stringify(_encrypted_message2.default.deserialize(document.getElementById('encrypted-message').innerText).toJSONFriendlyObject()));
 }
