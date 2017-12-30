@@ -185,10 +185,7 @@ window.addEventListener('load', () => {
   });
 
   document.getElementById('decryption-password').focus();
-  flasher.flash(
-    'pink',
-    'Enter decryption password in top-left to decrypt the passwords in this file.'
-  );
+
   onEnter(document.getElementById('decryption-password'), () => {document.getElementById('decrypt-button').click();});
   onEnter(document.getElementById('set-field--value'), () => {document.getElementById('set-field-button').click();})
 
