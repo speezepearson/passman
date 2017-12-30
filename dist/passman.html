@@ -115,7 +115,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 2);
+/******/ 	return __webpack_require__(__webpack_require__.s = 1);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -141,49 +141,27 @@ exports.default = globals;
 "use strict";
 
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-function escapeRegExp(str) {
-  // source: https://stackoverflow.com/a/6969486
-  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-}
-
-function parseQuery(q) {
-  var pattern = q.split(' ').map(escapeRegExp).join('.+');
-  return new RegExp('^' + pattern, 'i');
-}
-
-exports.parseQuery = parseQuery;
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _globals = __webpack_require__(0);
 
 var _globals2 = _interopRequireDefault(_globals);
 
-var _download = __webpack_require__(3);
+var _download = __webpack_require__(2);
 
-var _secret_store = __webpack_require__(8);
+var _secret_store = __webpack_require__(3);
 
 var _flash = __webpack_require__(4);
 
-var _copy_to_clipboard = __webpack_require__(6);
+var _copy_to_clipboard = __webpack_require__(5);
 
 var _copy_to_clipboard2 = _interopRequireDefault(_copy_to_clipboard);
 
-var _encrypted_message = __webpack_require__(7);
+var _encrypted_message = __webpack_require__(6);
 
 var _encrypted_message2 = _interopRequireDefault(_encrypted_message);
 
-var _query = __webpack_require__(1);
+var _query = __webpack_require__(7);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -405,7 +383,7 @@ window.addEventListener('load', function () {
 });
 
 /***/ }),
-/* 3 */
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -455,333 +433,7 @@ exports.takeSnapshot = takeSnapshot;
 exports.downloadThisPageWithNewEncryptedMessage = downloadThisPageWithNewEncryptedMessage;
 
 /***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Flasher = function () {
-  function Flasher(statusElement) {
-    _classCallCheck(this, Flasher);
-
-    this.statusElement = statusElement;
-  }
-
-  _createClass(Flasher, [{
-    key: 'flash',
-    value: function flash(color, message) {
-      var _this = this;
-
-      var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 500;
-
-      this.statusElement.style['background-color'] = color;
-      setTimeout(function () {
-        _this.statusElement.style['background-color'] = '';
-      }, duration);
-      this.statusElement.innerText = message.trim();
-    }
-  }, {
-    key: 'doOrFlashRed',
-    value: function doOrFlashRed(f, message) {
-      var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 500;
-
-      try {
-        return f();
-      } catch (err) {
-        this.flash('pink', message + ('\n(error: ' + err + ')'), duration);
-        throw err;
-      }
-    }
-  }, {
-    key: 'awaitOrFlashRed',
-    value: function awaitOrFlashRed(p, message, catchFollowup) {
-      var duration,
-          _this2 = this,
-          _arguments = arguments;
-
-      duration = _arguments.length > 3 && _arguments[3] !== undefined ? _arguments[3] : 500;
-
-      try {
-        return p;
-      } catch (err) {
-        if (catchFollowup !== undefined) {
-          catchFollowup();
-        }_this2.flash('pink', message + ('\n(error: ' + err + ')'), duration);
-        throw err;
-      }
-    }
-  }]);
-
-  return Flasher;
-}();
-
-exports.Flasher = Flasher;
-
-/***/ }),
-/* 5 */,
-/* 6 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _globals = __webpack_require__(0);
-
-var _globals2 = _interopRequireDefault(_globals);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var globals = (0, _globals2.default)();
-
-function copyToClipboard(text) {
-  // source: https://stackoverflow.com/a/30810322
-  var textArea = globals.document.createElement("textarea");
-
-  //
-  // *** This styling is an extra step which is likely not required. ***
-  //
-  // Why is it here? To ensure:
-  // 1. the element is able to have focus and selection.
-  // 2. if element was to flash render it has minimal visual impact.
-  // 3. less flakyness with selection and copying which **might** occur if
-  //    the textarea element is not visible.
-  //
-  // The likelihood is the element won't even render, not even a flash,
-  // so some of these are just precautions. However in IE the element
-  // is visible whilst the popup box asking the user for permission for
-  // the web page to copy to the clipboard.
-  //
-
-  // Place in top-left corner of screen regardless of scroll position.
-  textArea.style.position = 'fixed';
-  textArea.style.top = 0;
-  textArea.style.left = 0;
-
-  // Ensure it has a small width and height. Setting to 1px / 1em
-  // doesn't work as this gives a negative w/h on some browsers.
-  textArea.style.width = '2em';
-  textArea.style.height = '2em';
-
-  // We don't need padding, reducing the size if it does flash render.
-  textArea.style.padding = 0;
-
-  // Clean up any borders.
-  textArea.style.border = 'none';
-  textArea.style.outline = 'none';
-  textArea.style.boxShadow = 'none';
-
-  // Avoid flash of white box if rendered for any reason.
-  textArea.style.background = 'transparent';
-
-  textArea.value = text;
-
-  globals.document.body.appendChild(textArea);
-
-  textArea.select();
-
-  try {
-    var successful = globals.document.execCommand('copy');
-    var msg = successful ? 'successful' : 'unsuccessful';
-    console.log('Copying text command was ' + msg);
-  } catch (err) {
-    console.log('Oops, unable to copy');
-  }
-
-  globals.document.body.removeChild(textArea);
-}
-
-exports.default = copyToClipboard;
-
-/***/ }),
-/* 7 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-var _globals = __webpack_require__(0);
-
-var _globals2 = _interopRequireDefault(_globals);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var globals = (0, _globals2.default)();
-
-function pbkdf2(password, keyDerivationAlgorithm, encryptionAlgorithm, forEncryption) {
-  var pwUtf8, pwHash, _temp;
-
-  return Promise.resolve().then(function () {
-    pwUtf8 = new TextEncoder().encode(password);
-    return globals.window.crypto.subtle.digest('SHA-256', pwUtf8);
-  }).then(function (_resp) {
-    pwHash = _resp;
-    return Promise.all([keyDerivationAlgorithm, globals.window.crypto.subtle.importKey('raw', pwHash, keyDerivationAlgorithm, false, ['deriveKey']), encryptionAlgorithm, false, [forEncryption ? 'encrypt' : 'decrypt']]);
-  }).then(function (_resp) {
-    _temp = _resp;
-
-    return globals.window.crypto.subtle.deriveKey(_temp[0], _temp[1], _temp[2], _temp[3], _temp[4]);
-  });
-}
-
-var typedAlgorithmFields = {
-  'iv': function iv(a) {
-    return Uint8Array.from(a);
-  },
-  'salt': function salt(a) {
-    return Uint8Array.from(a);
-  },
-  'counter': function counter(a) {
-    return Uint8Array.from(a);
-  }
-};
-function algorithmToJSONFriendlyObject(algorithm) {
-  var j = Object.assign({}, algorithm);
-  Object.keys(typedAlgorithmFields).forEach(function (attr) {
-    if (j[attr] !== undefined) {
-      j[attr] = Array.from(j[attr]);
-    }
-  });
-  return j;
-}
-function jsonFriendlyObjectToAlgorithm(j) {
-  var algorithm = Object.assign({}, j);
-  Object.entries(typedAlgorithmFields).forEach(function (_ref) {
-    var _ref2 = _slicedToArray(_ref, 2),
-        attr = _ref2[0],
-        typify = _ref2[1];
-
-    if (algorithm[attr] !== undefined) {
-      algorithm[attr] = typify(algorithm[attr]);
-    }
-  });
-  return algorithm;
-}
-
-var defaultOptions = {
-  keyDerivationAlgorithm: { 'name': 'PBKDF2', 'hash': 'SHA-256', 'iterations': 100000 },
-  encryptionAlgorithm: { 'name': 'AES-GCM', 'length': 256 }
-};
-
-var EncryptedMessage = function () {
-  function EncryptedMessage(keyDerivationAlgorithm, encryptionAlgorithm, ciphertext) {
-    _classCallCheck(this, EncryptedMessage);
-
-    this.keyDerivationAlgorithm = keyDerivationAlgorithm;
-    this.encryptionAlgorithm = encryptionAlgorithm;
-    this.ciphertext = ciphertext;
-  }
-
-  _createClass(EncryptedMessage, [{
-    key: 'toJSONFriendlyObject',
-    value: function toJSONFriendlyObject() {
-      return {
-        keyDerivationAlgorithm: algorithmToJSONFriendlyObject(this.keyDerivationAlgorithm),
-        encryptionAlgorithm: algorithmToJSONFriendlyObject(this.encryptionAlgorithm),
-        ciphertext: Array.from(new Uint8Array(this.ciphertext))
-      };
-    }
-  }, {
-    key: 'serialize',
-    value: function serialize() {
-      return JSON.stringify(this.toJSONFriendlyObject());
-    }
-  }, {
-    key: 'decrypt',
-    value: function decrypt(password) {
-      var key,
-          ptUtf8,
-          _this7 = this;
-
-      return Promise.resolve().then(function () {
-        return pbkdf2(password, _this7.keyDerivationAlgorithm, _this7.encryptionAlgorithm, false);
-      }).then(function (_resp) {
-        key = _resp;
-        return globals.window.crypto.subtle.decrypt(_this7.encryptionAlgorithm, key, _this7.ciphertext);
-      }).then(function (_resp) {
-        ptUtf8 = _resp;
-
-        return new TextDecoder().decode(ptUtf8);
-      });
-    }
-  }], [{
-    key: 'fromJSONFriendlyObject',
-    value: function fromJSONFriendlyObject(j) {
-      var keyDerivationAlgorithm = j.keyDerivationAlgorithm,
-          encryptionAlgorithm = j.encryptionAlgorithm,
-          ciphertext = j.ciphertext;
-
-      if (keyDerivationAlgorithm === undefined || encryptionAlgorithm === undefined || ciphertext === undefined) {
-        alert('malformed JSON-ized encrypted message');
-      }
-      keyDerivationAlgorithm = jsonFriendlyObjectToAlgorithm(keyDerivationAlgorithm);
-      encryptionAlgorithm = jsonFriendlyObjectToAlgorithm(encryptionAlgorithm);
-      ciphertext = new Uint8Array(ciphertext).buffer;
-      return new EncryptedMessage(keyDerivationAlgorithm, encryptionAlgorithm, ciphertext);
-    }
-  }, {
-    key: 'deserialize',
-    value: function deserialize(s) {
-      return EncryptedMessage.fromJSONFriendlyObject(JSON.parse(s));
-    }
-  }, {
-    key: 'create',
-    value: function create(password, plaintext, options) {
-      var _options, keyDerivationAlgorithm, encryptionAlgorithm, key, ptUtf8, ciphertext;
-
-      return Promise.resolve().then(function () {
-        options = Object.assign({}, defaultOptions, options);
-        _options = options;
-        keyDerivationAlgorithm = _options.keyDerivationAlgorithm;
-        encryptionAlgorithm = _options.encryptionAlgorithm;
-
-        keyDerivationAlgorithm.salt = globals.window.crypto.getRandomValues(new Uint8Array(12));
-        return pbkdf2(password, keyDerivationAlgorithm, encryptionAlgorithm, true);
-      }).then(function (_resp) {
-        key = _resp;
-        ptUtf8 = new TextEncoder().encode(plaintext);
-
-
-        encryptionAlgorithm.iv = globals.window.crypto.getRandomValues(new Uint8Array(12));
-        return globals.window.crypto.subtle.encrypt(encryptionAlgorithm, key, ptUtf8);
-      }).then(function (_resp) {
-        ciphertext = _resp;
-
-
-        return new EncryptedMessage(keyDerivationAlgorithm, encryptionAlgorithm, ciphertext);
-      });
-    }
-  }]);
-
-  return EncryptedMessage;
-}();
-
-exports.default = EncryptedMessage;
-
-/***/ }),
-/* 8 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -992,6 +644,353 @@ var SecretStore = function () {
 
 exports.validate = validate;
 exports.SecretStore = SecretStore;
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Flasher = function () {
+  function Flasher(statusElement) {
+    _classCallCheck(this, Flasher);
+
+    this.statusElement = statusElement;
+  }
+
+  _createClass(Flasher, [{
+    key: 'flash',
+    value: function flash(color, message) {
+      var _this = this;
+
+      var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 500;
+
+      this.statusElement.style['background-color'] = color;
+      setTimeout(function () {
+        _this.statusElement.style['background-color'] = '';
+      }, duration);
+      this.statusElement.innerText = message.trim();
+    }
+  }, {
+    key: 'doOrFlashRed',
+    value: function doOrFlashRed(f, message) {
+      var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 500;
+
+      try {
+        return f();
+      } catch (err) {
+        this.flash('pink', message + ('\n(error: ' + err + ')'), duration);
+        throw err;
+      }
+    }
+  }, {
+    key: 'awaitOrFlashRed',
+    value: function awaitOrFlashRed(p, message, catchFollowup) {
+      var duration,
+          _this2 = this,
+          _arguments = arguments;
+
+      duration = _arguments.length > 3 && _arguments[3] !== undefined ? _arguments[3] : 500;
+
+      try {
+        return p;
+      } catch (err) {
+        if (catchFollowup !== undefined) {
+          catchFollowup();
+        }_this2.flash('pink', message + ('\n(error: ' + err + ')'), duration);
+        throw err;
+      }
+    }
+  }]);
+
+  return Flasher;
+}();
+
+exports.Flasher = Flasher;
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _globals = __webpack_require__(0);
+
+var _globals2 = _interopRequireDefault(_globals);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var globals = (0, _globals2.default)();
+
+function copyToClipboard(text) {
+  // source: https://stackoverflow.com/a/30810322
+  var textArea = globals.document.createElement("textarea");
+
+  //
+  // *** This styling is an extra step which is likely not required. ***
+  //
+  // Why is it here? To ensure:
+  // 1. the element is able to have focus and selection.
+  // 2. if element was to flash render it has minimal visual impact.
+  // 3. less flakyness with selection and copying which **might** occur if
+  //    the textarea element is not visible.
+  //
+  // The likelihood is the element won't even render, not even a flash,
+  // so some of these are just precautions. However in IE the element
+  // is visible whilst the popup box asking the user for permission for
+  // the web page to copy to the clipboard.
+  //
+
+  // Place in top-left corner of screen regardless of scroll position.
+  textArea.style.position = 'fixed';
+  textArea.style.top = 0;
+  textArea.style.left = 0;
+
+  // Ensure it has a small width and height. Setting to 1px / 1em
+  // doesn't work as this gives a negative w/h on some browsers.
+  textArea.style.width = '2em';
+  textArea.style.height = '2em';
+
+  // We don't need padding, reducing the size if it does flash render.
+  textArea.style.padding = 0;
+
+  // Clean up any borders.
+  textArea.style.border = 'none';
+  textArea.style.outline = 'none';
+  textArea.style.boxShadow = 'none';
+
+  // Avoid flash of white box if rendered for any reason.
+  textArea.style.background = 'transparent';
+
+  textArea.value = text;
+
+  globals.document.body.appendChild(textArea);
+
+  textArea.select();
+
+  try {
+    var successful = globals.document.execCommand('copy');
+    var msg = successful ? 'successful' : 'unsuccessful';
+    console.log('Copying text command was ' + msg);
+  } catch (err) {
+    console.log('Oops, unable to copy');
+  }
+
+  globals.document.body.removeChild(textArea);
+}
+
+exports.default = copyToClipboard;
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _globals = __webpack_require__(0);
+
+var _globals2 = _interopRequireDefault(_globals);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var globals = (0, _globals2.default)();
+
+function pbkdf2(password, keyDerivationAlgorithm, encryptionAlgorithm, forEncryption) {
+  var pwUtf8, pwHash, _temp;
+
+  return Promise.resolve().then(function () {
+    pwUtf8 = new TextEncoder().encode(password);
+    return globals.window.crypto.subtle.digest('SHA-256', pwUtf8);
+  }).then(function (_resp) {
+    pwHash = _resp;
+    return Promise.all([keyDerivationAlgorithm, globals.window.crypto.subtle.importKey('raw', pwHash, keyDerivationAlgorithm, false, ['deriveKey']), encryptionAlgorithm, false, [forEncryption ? 'encrypt' : 'decrypt']]);
+  }).then(function (_resp) {
+    _temp = _resp;
+
+    return globals.window.crypto.subtle.deriveKey(_temp[0], _temp[1], _temp[2], _temp[3], _temp[4]);
+  });
+}
+
+var typedAlgorithmFields = {
+  'iv': function iv(a) {
+    return Uint8Array.from(a);
+  },
+  'salt': function salt(a) {
+    return Uint8Array.from(a);
+  },
+  'counter': function counter(a) {
+    return Uint8Array.from(a);
+  }
+};
+function algorithmToJSONFriendlyObject(algorithm) {
+  var j = Object.assign({}, algorithm);
+  Object.keys(typedAlgorithmFields).forEach(function (attr) {
+    if (j[attr] !== undefined) {
+      j[attr] = Array.from(j[attr]);
+    }
+  });
+  return j;
+}
+function jsonFriendlyObjectToAlgorithm(j) {
+  var algorithm = Object.assign({}, j);
+  Object.entries(typedAlgorithmFields).forEach(function (_ref) {
+    var _ref2 = _slicedToArray(_ref, 2),
+        attr = _ref2[0],
+        typify = _ref2[1];
+
+    if (algorithm[attr] !== undefined) {
+      algorithm[attr] = typify(algorithm[attr]);
+    }
+  });
+  return algorithm;
+}
+
+var defaultOptions = {
+  keyDerivationAlgorithm: { 'name': 'PBKDF2', 'hash': 'SHA-256', 'iterations': 100000 },
+  encryptionAlgorithm: { 'name': 'AES-GCM', 'length': 256 }
+};
+
+var EncryptedMessage = function () {
+  function EncryptedMessage(keyDerivationAlgorithm, encryptionAlgorithm, ciphertext) {
+    _classCallCheck(this, EncryptedMessage);
+
+    this.keyDerivationAlgorithm = keyDerivationAlgorithm;
+    this.encryptionAlgorithm = encryptionAlgorithm;
+    this.ciphertext = ciphertext;
+  }
+
+  _createClass(EncryptedMessage, [{
+    key: 'toJSONFriendlyObject',
+    value: function toJSONFriendlyObject() {
+      return {
+        keyDerivationAlgorithm: algorithmToJSONFriendlyObject(this.keyDerivationAlgorithm),
+        encryptionAlgorithm: algorithmToJSONFriendlyObject(this.encryptionAlgorithm),
+        ciphertext: Array.from(new Uint8Array(this.ciphertext))
+      };
+    }
+  }, {
+    key: 'serialize',
+    value: function serialize() {
+      return JSON.stringify(this.toJSONFriendlyObject());
+    }
+  }, {
+    key: 'decrypt',
+    value: function decrypt(password) {
+      var key,
+          ptUtf8,
+          _this7 = this;
+
+      return Promise.resolve().then(function () {
+        return pbkdf2(password, _this7.keyDerivationAlgorithm, _this7.encryptionAlgorithm, false);
+      }).then(function (_resp) {
+        key = _resp;
+        return globals.window.crypto.subtle.decrypt(_this7.encryptionAlgorithm, key, _this7.ciphertext);
+      }).then(function (_resp) {
+        ptUtf8 = _resp;
+
+        return new TextDecoder().decode(ptUtf8);
+      });
+    }
+  }], [{
+    key: 'fromJSONFriendlyObject',
+    value: function fromJSONFriendlyObject(j) {
+      var keyDerivationAlgorithm = j.keyDerivationAlgorithm,
+          encryptionAlgorithm = j.encryptionAlgorithm,
+          ciphertext = j.ciphertext;
+
+      if (keyDerivationAlgorithm === undefined || encryptionAlgorithm === undefined || ciphertext === undefined) {
+        alert('malformed JSON-ized encrypted message');
+      }
+      keyDerivationAlgorithm = jsonFriendlyObjectToAlgorithm(keyDerivationAlgorithm);
+      encryptionAlgorithm = jsonFriendlyObjectToAlgorithm(encryptionAlgorithm);
+      ciphertext = new Uint8Array(ciphertext).buffer;
+      return new EncryptedMessage(keyDerivationAlgorithm, encryptionAlgorithm, ciphertext);
+    }
+  }, {
+    key: 'deserialize',
+    value: function deserialize(s) {
+      return EncryptedMessage.fromJSONFriendlyObject(JSON.parse(s));
+    }
+  }, {
+    key: 'create',
+    value: function create(password, plaintext, options) {
+      var _options, keyDerivationAlgorithm, encryptionAlgorithm, key, ptUtf8, ciphertext;
+
+      return Promise.resolve().then(function () {
+        options = Object.assign({}, defaultOptions, options);
+        _options = options;
+        keyDerivationAlgorithm = _options.keyDerivationAlgorithm;
+        encryptionAlgorithm = _options.encryptionAlgorithm;
+
+        keyDerivationAlgorithm.salt = globals.window.crypto.getRandomValues(new Uint8Array(12));
+        return pbkdf2(password, keyDerivationAlgorithm, encryptionAlgorithm, true);
+      }).then(function (_resp) {
+        key = _resp;
+        ptUtf8 = new TextEncoder().encode(plaintext);
+
+
+        encryptionAlgorithm.iv = globals.window.crypto.getRandomValues(new Uint8Array(12));
+        return globals.window.crypto.subtle.encrypt(encryptionAlgorithm, key, ptUtf8);
+      }).then(function (_resp) {
+        ciphertext = _resp;
+
+
+        return new EncryptedMessage(keyDerivationAlgorithm, encryptionAlgorithm, ciphertext);
+      });
+    }
+  }]);
+
+  return EncryptedMessage;
+}();
+
+exports.default = EncryptedMessage;
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+function escapeRegExp(str) {
+  // source: https://stackoverflow.com/a/6969486
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+}
+
+function parseQuery(q) {
+  var pattern = q.split(' ').map(escapeRegExp).join('.+');
+  return new RegExp('^' + pattern, 'i');
+}
+
+exports.parseQuery = parseQuery;
 
 /***/ })
 /******/ ]);</script></head>
