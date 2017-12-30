@@ -3,10 +3,9 @@ function escapeRegExp(str) {
   return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
 
-function query(q, obj) {
+function parseQuery(q) {
   var pattern = q.split(' ').map(escapeRegExp).join('.+')
-  var regexp = new RegExp('^' + pattern, 'i');
-  return Object.keys(obj).sort().filter(s => regexp.test(s));
+  return new RegExp('^' + pattern, 'i');
 }
 
-export default query;
+export { parseQuery };

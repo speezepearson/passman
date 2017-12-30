@@ -5,11 +5,11 @@ globals.document = document;
 import { takeSnapshot, downloadThisPageWithNewEncryptedMessage } from './download.js';
 window.addEventListener('load', takeSnapshot);
 
+import { SecretStore } from './secret_store.js';
 import { Flasher } from './flash.js';
-import SecretsView from './secrets_view.js';
 import copyToClipboard from './copy_to_clipboard.js';
 import EncryptedMessage from './encrypted_message.js';
-import query from './query.js';
+import { parseQuery } from './query.js';
 
 var decryptedJ = null;
 
@@ -36,30 +36,18 @@ function only(xs) {
   return xs[0];
 }
 
-var view;
-window.addEventListener('load', () => {
-  view = new SecretsView(
-    document.getElementById('view-holder'),
-    () => j,
-    () => document.getElementById('copy-field--account').value,
-    () => document.getElementById('copy-field--field').value,
-  );
-});
-
 function updateView() {
-  view.refresh();
+  var [accountRE, fieldRE] = ['account', 'field'].map(f => parseQuery(document.getElementById(`copy-field--${f}`).value));
+  document.getElementById('view-holder').innerHTML = '';
+  document.getElementById('view-holder').appendChild(j.filter(accountRE, fieldRE).buildView());
 }
 
-var j = {};
-
-function normalizeJ(j) {
-  return Object.entries(j).sort().map(([k, v]) => [k, Object.entries(v).sort()]);
-}
-var normalizedDecryptedJ = null;
+var j = new SecretStore({});
+var decryptedJFingerprint = null;
 
 
 function thereAreUnsavedChanges() {
-  return (Object.keys(j).length > 0) && (JSON.stringify(normalizeJ(j)) != JSON.stringify(normalizedDecryptedJ));
+  return (j.nAccounts() > 0) && (decryptedJFingerprint !== j.fingerprint());
 }
 async function decrypt() {
 
@@ -75,9 +63,9 @@ async function decrypt() {
     document.getElementById('password').focus();
     return;
   }
-  var decryptedJ = JSON.parse(plaintext);
-  mergeJs(j, decryptedJ);
-  normalizedDecryptedJ = normalizeJ(decryptedJ);
+  var decryptedJ = new SecretStore(JSON.parse(plaintext));
+  decryptedJFingerprint = decryptedJ.fingerprint();
+  j.foldIn(decryptedJ);
   updateView();
   document.getElementById('copy-field--account').focus();
   flasher.flash(document.getElementById('decrypt-button'), 'lightgreen', `
@@ -85,7 +73,7 @@ async function decrypt() {
   `);
 }
 function copyPlaintext() {
-  copyToClipboard(JSON.stringify(j, null, 2));
+  copyToClipboard(JSON.stringify(j.data, null, 2));
   flasher.flash(document.getElementById('copy-plaintext-button'), 'lightgreen', `
     Copied entire working memory to clipboard, as JSON.
   `);
@@ -122,7 +110,7 @@ async function save() {
     return;
   }
 
-  var em = await EncryptedMessage.create(password, JSON.stringify(j));
+  var em = await EncryptedMessage.create(password, JSON.stringify(j.data));
   downloadThisPageWithNewEncryptedMessage(em);
   flasher.flash(document.getElementById('save-button'), 'lightgreen', `
     Downloaded a clone of this HTML file, except the ciphertext encodes this page's current working memory.
@@ -185,7 +173,7 @@ async function importCiphertext() {
   );
 
   flasher.doOrFlashRed(
-    () => mergeJs(j, importedJ),
+    () => j.foldIn(new SecretStore(importedJ)),
     document.getElementById('import-ciphertext-button'),
     "Tried to merge the ciphertext from another Passman file into working memory, but the decrypted JSON object from the other file doesn't have the expected shape. (This is REALLY WEIRD.)"
   );
@@ -202,7 +190,7 @@ function importPlaintext() {
     "Tried to merge the 'Import JSON' field into working memory, but failed to parse the JSON."
   );
   flasher.doOrFlashRed(
-    () => mergeJs(j, importedJ),
+    () => j.foldIn(new SecretStore(importedJ)),
     document.getElementById('import-plaintext-button'),
     `Tried to merge the 'Import JSON' field into working memory, but the JSON object you pasted in doesn't have the expected shape. (It should be an exactly-two-level object whose leaf values are strings, like {"a": {"b": "c"}}, and not like {"a": {"b": ["c"]}} or {"a": {"b": 3}} or {"a": {"b": {}}}.)`
   )
@@ -212,47 +200,19 @@ function importPlaintext() {
   `);
 }
 
-function validJOrThrow(j) {
-  if (typeof j !== 'object') throw 'not an object';
-  Object.entries(j).forEach(([k, sub]) => {
-    if (typeof sub !== 'object') throw `key ${JSON.stringify(k)} maps to non-object`;
-    Object.entries(sub).forEach(([field, value]) => {
-      if (typeof value !== 'string') throw `field ${JSON.stringify(k)}.${JSON.stringify(field)} has type ${typeof value}, not string`
-    })
-  });
-}
-function mergeJs(target, newJ) {
-  validJOrThrow(target);
-  validJOrThrow(newJ);
-  Object.entries(newJ).forEach(([account, info]) => {
-    if (target[account] === undefined) {
-      target[account] = {};
-    }
-    Object.assign(target[account], info);
-  });
-}
-
 function bulkImport() {
-  var importedJ = JSON.parse($('#bulk-import-field').value);
-  mergeJs(j, importedJ);
+  var importedJ = new SecretStore(JSON.parse($('#bulk-import-field').value));
+  j.foldIn(importedJ);
 }
 
 function setField() {
   var [account, field, value] = ['account', 'field', 'value'].map(f => document.getElementById(`set-field--${f}`).value);
-
-  if (j[account]===undefined) j[account] = {};
-  if (value === '') {
-    delete j[account][field];
-    if (Object.keys(j[account]).length === 0) {
-      delete j[account];
-    }
-  } else {
-    j[account][field] = document.getElementById('set-field--value').value;
-  }
+  j.set(account, field, value);
   updateView();
   flasher.flash(document.getElementById('set-field--value'), 'lightgreen', `
     Set ${account}.${field}
   `);
+  document.getElementById('set-field--value').value = '';
 }
 
 window.addEventListener('load', () => {
@@ -276,7 +236,7 @@ window.addEventListener('load', () => {
     if (e.target.classList.contains('copy-button')) {
       var account = e.target.getAttribute('data-account');
       var field = e.target.getAttribute('data-field');
-      copyToClipboard(j[account][field]);
+      copyToClipboard(j.get(account, field));
       flasher.flash(e.target, 'lightgreen', `
         Copied ${field} for ${account} to clipboard.
       `);

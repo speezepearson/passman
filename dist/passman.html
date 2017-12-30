@@ -143,15 +143,12 @@ function escapeRegExp(str) {
   return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
 
-function query(q, obj) {
+function parseQuery(q) {
   var pattern = q.split(' ').map(escapeRegExp).join('.+');
-  var regexp = new RegExp('^' + pattern, 'i');
-  return Object.keys(obj).sort().filter(function (s) {
-    return regexp.test(s);
-  });
+  return new RegExp('^' + pattern, 'i');
 }
 
-exports.default = query;
+exports.parseQuery = parseQuery;
 
 /***/ }),
 /* 2 */
@@ -170,11 +167,9 @@ var _globals2 = _interopRequireDefault(_globals);
 
 var _download = __webpack_require__(3);
 
+var _secret_store = __webpack_require__(8);
+
 var _flash = __webpack_require__(4);
-
-var _secrets_view = __webpack_require__(5);
-
-var _secrets_view2 = _interopRequireDefault(_secrets_view);
 
 var _copy_to_clipboard = __webpack_require__(6);
 
@@ -185,8 +180,6 @@ var _encrypted_message = __webpack_require__(7);
 var _encrypted_message2 = _interopRequireDefault(_encrypted_message);
 
 var _query = __webpack_require__(1);
-
-var _query2 = _interopRequireDefault(_query);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -225,36 +218,23 @@ function only(xs) {
   return xs[0];
 }
 
-var view;
-window.addEventListener('load', function () {
-  view = new _secrets_view2.default(document.getElementById('view-holder'), function () {
-    return j;
-  }, function () {
-    return document.getElementById('copy-field--account').value;
-  }, function () {
-    return document.getElementById('copy-field--field').value;
-  });
-});
-
 function updateView() {
-  view.refresh();
+  var _map = ['account', 'field'].map(function (f) {
+    return (0, _query.parseQuery)(document.getElementById('copy-field--' + f).value);
+  }),
+      _map2 = _slicedToArray(_map, 2),
+      accountRE = _map2[0],
+      fieldRE = _map2[1];
+
+  document.getElementById('view-holder').innerHTML = '';
+  document.getElementById('view-holder').appendChild(j.filter(accountRE, fieldRE).buildView());
 }
 
-var j = {};
-
-function normalizeJ(j) {
-  return Object.entries(j).sort().map(function (_ref3) {
-    var _ref4 = _slicedToArray(_ref3, 2),
-        k = _ref4[0],
-        v = _ref4[1];
-
-    return [k, Object.entries(v).sort()];
-  });
-}
-var normalizedDecryptedJ = null;
+var j = new _secret_store.SecretStore({});
+var decryptedJFingerprint = null;
 
 function thereAreUnsavedChanges() {
-  return Object.keys(j).length > 0 && JSON.stringify(normalizeJ(j)) != JSON.stringify(normalizedDecryptedJ);
+  return j.nAccounts() > 0 && decryptedJFingerprint !== j.fingerprint();
 }
 function decrypt() {
   var em, plaintext, decryptedJ;
@@ -270,17 +250,17 @@ function decrypt() {
       return;
     });
   }).then(function () {
-    decryptedJ = JSON.parse(plaintext);
+    decryptedJ = new _secret_store.SecretStore(JSON.parse(plaintext));
 
-    mergeJs(j, decryptedJ);
-    normalizedDecryptedJ = normalizeJ(decryptedJ);
+    decryptedJFingerprint = decryptedJ.fingerprint();
+    j.foldIn(decryptedJ);
     updateView();
     document.getElementById('copy-field--account').focus();
     flasher.flash(document.getElementById('decrypt-button'), 'lightgreen', '\n    Decrypted the ciphertext embedded in this HTML file, and merged it into working memory.\n  ');
   });
 }
 function copyPlaintext() {
-  (0, _copy_to_clipboard2.default)(JSON.stringify(j, null, 2));
+  (0, _copy_to_clipboard2.default)(JSON.stringify(j.data, null, 2));
   flasher.flash(document.getElementById('copy-plaintext-button'), 'lightgreen', '\n    Copied entire working memory to clipboard, as JSON.\n  ');
 }
 function copyCiphertext() {
@@ -314,7 +294,7 @@ function save() {
         flasher.flash(document.getElementById('save-button'), 'red', 'Would have saved, but you aborted.');
       } else {
         return Promise.resolve().then(function () {
-          return _encrypted_message2.default.create(password, JSON.stringify(j));
+          return _encrypted_message2.default.create(password, JSON.stringify(j.data));
         }).then(function (_resp) {
           em = _resp;
 
@@ -372,7 +352,7 @@ function importCiphertext() {
 
 
         flasher.doOrFlashRed(function () {
-          return mergeJs(j, importedJ);
+          return j.foldIn(new _secret_store.SecretStore(importedJ));
         }, document.getElementById('import-ciphertext-button'), "Tried to merge the ciphertext from another Passman file into working memory, but the decrypted JSON object from the other file doesn't have the expected shape. (This is REALLY WEIRD.)");
         updateView();
         flasher.flash(document.getElementById('password'), 'lightgreen', '\n    Merged the ciphertext from another Passman file into working memory.\n  ');
@@ -386,69 +366,30 @@ function importPlaintext() {
     return JSON.parse(document.getElementById('import-plaintext-field').value);
   }, document.getElementById('import-plaintext-field'), "Tried to merge the 'Import JSON' field into working memory, but failed to parse the JSON.");
   flasher.doOrFlashRed(function () {
-    return mergeJs(j, importedJ);
+    return j.foldIn(new _secret_store.SecretStore(importedJ));
   }, document.getElementById('import-plaintext-button'), 'Tried to merge the \'Import JSON\' field into working memory, but the JSON object you pasted in doesn\'t have the expected shape. (It should be an exactly-two-level object whose leaf values are strings, like {"a": {"b": "c"}}, and not like {"a": {"b": ["c"]}} or {"a": {"b": 3}} or {"a": {"b": {}}}.)');
   updateView();
   flasher.flash(document.getElementById('import-plaintext-button'), 'lightgreen', '\n    Merged the JSON from the "import plaintext" field into working memory.\n  ');
 }
 
-function validJOrThrow(j) {
-  if ((typeof j === 'undefined' ? 'undefined' : _typeof(j)) !== 'object') throw 'not an object';
-  Object.entries(j).forEach(function (_ref5) {
-    var _ref6 = _slicedToArray(_ref5, 2),
-        k = _ref6[0],
-        sub = _ref6[1];
-
-    if ((typeof sub === 'undefined' ? 'undefined' : _typeof(sub)) !== 'object') throw 'key ' + JSON.stringify(k) + ' maps to non-object';
-    Object.entries(sub).forEach(function (_ref7) {
-      var _ref8 = _slicedToArray(_ref7, 2),
-          field = _ref8[0],
-          value = _ref8[1];
-
-      if (typeof value !== 'string') throw 'field ' + JSON.stringify(k) + '.' + JSON.stringify(field) + ' has type ' + (typeof value === 'undefined' ? 'undefined' : _typeof(value)) + ', not string';
-    });
-  });
-}
-function mergeJs(target, newJ) {
-  validJOrThrow(target);
-  validJOrThrow(newJ);
-  Object.entries(newJ).forEach(function (_ref9) {
-    var _ref10 = _slicedToArray(_ref9, 2),
-        account = _ref10[0],
-        info = _ref10[1];
-
-    if (target[account] === undefined) {
-      target[account] = {};
-    }
-    Object.assign(target[account], info);
-  });
-}
-
 function bulkImport() {
-  var importedJ = JSON.parse($('#bulk-import-field').value);
-  mergeJs(j, importedJ);
+  var importedJ = new _secret_store.SecretStore(JSON.parse($('#bulk-import-field').value));
+  j.foldIn(importedJ);
 }
 
 function setField() {
-  var _map = ['account', 'field', 'value'].map(function (f) {
+  var _map3 = ['account', 'field', 'value'].map(function (f) {
     return document.getElementById('set-field--' + f).value;
   }),
-      _map2 = _slicedToArray(_map, 3),
-      account = _map2[0],
-      field = _map2[1],
-      value = _map2[2];
+      _map4 = _slicedToArray(_map3, 3),
+      account = _map4[0],
+      field = _map4[1],
+      value = _map4[2];
 
-  if (j[account] === undefined) j[account] = {};
-  if (value === '') {
-    delete j[account][field];
-    if (Object.keys(j[account]).length === 0) {
-      delete j[account];
-    }
-  } else {
-    j[account][field] = document.getElementById('set-field--value').value;
-  }
+  j.set(account, field, value);
   updateView();
   flasher.flash(document.getElementById('set-field--value'), 'lightgreen', '\n    Set ' + account + '.' + field + '\n  ');
+  document.getElementById('set-field--value').value = '';
 }
 
 window.addEventListener('load', function () {
@@ -457,10 +398,10 @@ window.addEventListener('load', function () {
     'copy-plaintext-button': copyPlaintext,
     'import-plaintext-button': importPlaintext,
     'import-ciphertext-button': importCiphertext,
-    'set-field-button': setField }).forEach(function (_ref11) {
-    var _ref12 = _slicedToArray(_ref11, 2),
-        id = _ref12[0],
-        clickCallback = _ref12[1];
+    'set-field-button': setField }).forEach(function (_ref3) {
+    var _ref4 = _slicedToArray(_ref3, 2),
+        id = _ref4[0],
+        clickCallback = _ref4[1];
 
     document.getElementById(id).addEventListener('click', clickCallback);
   });
@@ -474,7 +415,7 @@ window.addEventListener('load', function () {
     if (e.target.classList.contains('copy-button')) {
       var account = e.target.getAttribute('data-account');
       var field = e.target.getAttribute('data-field');
-      (0, _copy_to_clipboard2.default)(j[account][field]);
+      (0, _copy_to_clipboard2.default)(j.get(account, field));
       flasher.flash(e.target, 'lightgreen', '\n        Copied ' + field + ' for ' + account + ' to clipboard.\n      ');
     }
   });
@@ -624,105 +565,7 @@ var Flasher = function () {
 exports.Flasher = Flasher;
 
 /***/ }),
-/* 5 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _query = __webpack_require__(1);
-
-var _query2 = _interopRequireDefault(_query);
-
-var _globals = __webpack_require__(0);
-
-var _globals2 = _interopRequireDefault(_globals);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var globals = (0, _globals2.default)();
-
-function appendNewChild(parent, tagName) {
-  var result = globals.document.createElement(tagName);
-  parent.appendChild(result);
-  return result;
-}
-
-function filterJ(j, q1, q2) {
-  if (j === null) return [];
-  var result = {};
-  (0, _query2.default)(q1, j).forEach(function (k) {
-    result[k] = {};
-    (0, _query2.default)(q2, j[k]).forEach(function (k2) {
-      result[k][k2] = j[k][k2];
-    });
-  });
-  return result;
-}
-
-function nFields(j) {
-  return [].concat.apply([], Object.values(j).map(function (v) {
-    return Object.keys(v);
-  })).length;
-}
-
-var SecretsView = function () {
-  function SecretsView(element, getData, getAccountQ, getFieldQ) {
-    _classCallCheck(this, SecretsView);
-
-    this.element = element;
-    this.getData = getData;
-    this.getAccountQ = getAccountQ;
-    this.getFieldQ = getFieldQ;
-  }
-
-  _createClass(SecretsView, [{
-    key: 'refresh',
-    value: function refresh() {
-      this.element.innerHTML = '';
-      var unfilteredJ = this.getData();
-      var j = filterJ(unfilteredJ, this.getAccountQ(), this.getFieldQ());
-
-      var table = appendNewChild(globals.document.getElementById('view-holder'), 'table');
-      var headerRow = appendNewChild(table, 'tr');
-      appendNewChild(headerRow, 'th').innerText = Object.keys(j).length + '/' + Object.keys(unfilteredJ).length + ' accounts match';
-      appendNewChild(headerRow, 'th').innerText = nFields(j) + '/' + nFields(unfilteredJ) + ' fields match';
-      Object.entries(j).forEach(function (_ref) {
-        var _ref2 = _slicedToArray(_ref, 2),
-            account = _ref2[0],
-            info = _ref2[1];
-
-        var tr = appendNewChild(table, 'tr');
-        appendNewChild(tr, 'td').innerText = account;
-        var dataCell = appendNewChild(tr, 'td');
-        Object.keys(info).sort().forEach(function (field) {
-          var copyButton = appendNewChild(dataCell, 'button');
-          copyButton.classList.add('copy-button');
-          copyButton.setAttribute('data-account', account);
-          copyButton.setAttribute('data-field', field);
-          copyButton.innerText = field;
-          appendNewChild(dataCell, 'br');
-        });
-      });
-    }
-  }]);
-
-  return SecretsView;
-}();
-
-exports.default = SecretsView;
-
-/***/ }),
+/* 5 */,
 /* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -974,6 +817,198 @@ var EncryptedMessage = function () {
 }();
 
 exports.default = EncryptedMessage;
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.SecretStore = exports.validate = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var _globals = __webpack_require__(0);
+
+var _globals2 = _interopRequireDefault(_globals);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var globals = (0, _globals2.default)();
+
+function appendNewChild(parent, tagName) {
+  var result = globals.document.createElement(tagName);
+  parent.appendChild(result);
+  return result;
+}
+
+function validate(data) {
+  if ((typeof data === 'undefined' ? 'undefined' : _typeof(data)) !== 'object') throw 'not an object';
+  Object.entries(data).forEach(function (_ref) {
+    var _ref2 = _slicedToArray(_ref, 2),
+        k = _ref2[0],
+        sub = _ref2[1];
+
+    if ((typeof sub === 'undefined' ? 'undefined' : _typeof(sub)) !== 'object') throw 'key ' + JSON.stringify(k) + ' maps to non-object';
+    Object.entries(sub).forEach(function (_ref3) {
+      var _ref4 = _slicedToArray(_ref3, 2),
+          field = _ref4[0],
+          value = _ref4[1];
+
+      if (typeof value !== 'string') throw 'field ' + JSON.stringify(k) + '.' + JSON.stringify(field) + ' has type ' + (typeof value === 'undefined' ? 'undefined' : _typeof(value)) + ', not string';
+    });
+  });
+}
+
+var SecretStore = function () {
+  function SecretStore(data) {
+    _classCallCheck(this, SecretStore);
+
+    validate(data);
+    this.data = data;
+  }
+
+  _createClass(SecretStore, [{
+    key: 'nAccounts',
+    value: function nAccounts() {
+      return Object.values(this.data).length;
+    }
+  }, {
+    key: 'nFields',
+    value: function nFields() {
+      return [].concat.apply([], Object.values(this.data).map(function (v) {
+        return Object.keys(v);
+      })).length;
+    }
+  }, {
+    key: 'fingerprint',
+    value: function fingerprint() {
+      return JSON.stringify(Object.entries(this.data).sort().map(function (_ref5) {
+        var _ref6 = _slicedToArray(_ref5, 2),
+            k = _ref6[0],
+            v = _ref6[1];
+
+        return [k, Object.entries(v).sort()];
+      }));
+    }
+  }, {
+    key: 'allFields',
+    value: function allFields() {
+      var result = [];
+      Object.entries(this.data).sort().forEach(function (_ref7) {
+        var _ref8 = _slicedToArray(_ref7, 2),
+            account = _ref8[0],
+            info = _ref8[1];
+
+        Object.entries(info).sort().forEach(function (_ref9) {
+          var _ref10 = _slicedToArray(_ref9, 2),
+              field = _ref10[0],
+              value = _ref10[1];
+
+          result.push([account, field, value]);
+        });
+      });
+      return result;
+    }
+  }, {
+    key: 'filter',
+    value: function filter(accountRE, fieldRE) {
+      var result = new SecretStore({});
+      this.allFields().filter(function (_ref11) {
+        var _ref12 = _slicedToArray(_ref11, 3),
+            a = _ref12[0],
+            f = _ref12[1],
+            v = _ref12[2];
+
+        return accountRE.test(a) && fieldRE.test(f);
+      }).forEach(function (_ref13) {
+        var _ref14 = _slicedToArray(_ref13, 3),
+            a = _ref14[0],
+            f = _ref14[1],
+            v = _ref14[2];
+
+        return result.set(a, f, v);
+      });
+      return result;
+    }
+  }, {
+    key: 'foldIn',
+    value: function foldIn(other) {
+      var _this = this;
+
+      other.allFields().forEach(function (_ref15) {
+        var _ref16 = _slicedToArray(_ref15, 3),
+            a = _ref16[0],
+            f = _ref16[1],
+            v = _ref16[2];
+
+        return _this.set(a, f, v);
+      });
+    }
+  }, {
+    key: 'get',
+    value: function get(account, field) {
+      if (this.data[account] === undefined) return undefined;
+      return this.data[account][field];
+    }
+  }, {
+    key: 'set',
+    value: function set(account, field, value) {
+      if (value === '') {
+        delete this.data[account][field];
+        if (Object.keys(this.data[account]).length === 0) {
+          delete this.data[account];
+        }
+      } else {
+        if (this.data[account] === undefined) this.data[account] = {};
+        this.data[account][field] = value;
+      }
+    }
+  }, {
+    key: 'buildView',
+    value: function buildView() {
+      var result = appendNewChild(globals.document.getElementById('view-holder'), 'table');
+
+      var headerRow = appendNewChild(result, 'tr');
+      appendNewChild(headerRow, 'th').innerText = this.nAccounts() + ' accounts match';
+      appendNewChild(headerRow, 'th').innerText = this.nFields() + ' fields match';
+
+      Object.entries(this.data).forEach(function (_ref17) {
+        var _ref18 = _slicedToArray(_ref17, 2),
+            account = _ref18[0],
+            info = _ref18[1];
+
+        var tr = appendNewChild(result, 'tr');
+        appendNewChild(tr, 'td').innerText = account;
+        var dataCell = appendNewChild(tr, 'td');
+        Object.keys(info).sort().forEach(function (field) {
+          var copyButton = appendNewChild(dataCell, 'button');
+          copyButton.classList.add('copy-button');
+          copyButton.setAttribute('data-account', account);
+          copyButton.setAttribute('data-field', field);
+          copyButton.innerText = field;
+          appendNewChild(dataCell, 'br');
+        });
+      });
+      return result;
+    }
+  }]);
+
+  return SecretStore;
+}();
+
+exports.validate = validate;
+exports.SecretStore = SecretStore;
 
 /***/ })
 /******/ ]);</script></head>
