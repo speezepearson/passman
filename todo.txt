@@ -1,2 +1,0 @@
-Add polyfills for things that reasonable people might be missing
-Enable downloading even when nothing has changed
