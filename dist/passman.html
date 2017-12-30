@@ -240,7 +240,10 @@ function decrypt() {
   });
 }
 function copyPlaintext() {
-  (0, _copy_to_clipboard2.default)(JSON.stringify(j.toJSONFriendlyObject(), null, 2));
+  var prettyJSON = JSON.stringify(j.toJSONFriendlyObject(), null, 2);
+  flasher.doOrFlashRed(function () {
+    return (0, _copy_to_clipboard2.default)(prettyJSON);
+  }, "Your browser doesn't support JavaScript copy-to-clipboard. Sorry!");
   flasher.flash('lightgreen', '\n    Copied entire working memory to clipboard, as JSON.\n  ');
 }
 function save() {
@@ -326,6 +329,21 @@ function setField() {
 }
 
 window.addEventListener('load', function () {
+
+  var reasonForCatastrophicFailure = null;
+  if (window.crypto.subtle === undefined) {
+    reasonForCatastrophicFailure = "Your browser isn't presenting the SubtleCrypto API that all major modern browsers do. (Note: Chrome, and possibly others, don't provide SubtleCrypto to JS loaded over http:// connections, only https://. This might be happening to you.)";
+  }
+  try {
+    (0, _copy_to_clipboard2.default)('');
+  } catch (err) {
+    reasonForCatastrophicFailure = "Your browser doesn't support JavaScript copy-to-clipboard. Sorry!";
+  }
+
+  if (reasonForCatastrophicFailure) {
+    document.body.innerText = 'THIS WON\'T WORK FOR YOU. ' + reasonForCatastrophicFailure;
+  }
+
   flasher = new _flash.Flasher(document.getElementById('status'));
 
   Object.entries({ 'decrypt-button': decrypt,
@@ -376,10 +394,6 @@ window.addEventListener('load', function () {
     });
   });
   updateView();
-
-  if (window.crypto.subtle === undefined) {
-    alert("THIS WON'T WORK FOR YOU. Your browser isn't presenting the SubtleCrypto API that all major modern browsers do. (Note: Chrome, and possibly others, don't provide SubtleCrypto to JS loaded over http:// connections, only https://. This might be happening to you.)");
-  }
 });
 
 /***/ }),
@@ -782,13 +796,7 @@ function copyToClipboard(text) {
 
   textArea.select();
 
-  try {
-    var successful = globals.document.execCommand('copy');
-    var msg = successful ? 'successful' : 'unsuccessful';
-    console.log('Copying text command was ' + msg);
-  } catch (err) {
-    console.log('Oops, unable to copy');
-  }
+  var successful = globals.document.execCommand('copy');
 
   globals.document.body.removeChild(textArea);
 }

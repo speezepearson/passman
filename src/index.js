@@ -156,6 +156,22 @@ function setField() {
 }
 
 window.addEventListener('load', () => {
+
+  var reasonForCatastrophicFailure = null;
+  if (window.crypto.subtle === undefined) {
+    reasonForCatastrophicFailure = "Your browser isn't presenting the SubtleCrypto API that all major modern browsers do. (Note: Chrome, and possibly others, don't provide SubtleCrypto to JS loaded over http:// connections, only https://. This might be happening to you.)";
+  }
+  try {
+    copyToClipboard('');
+  } catch (err) {
+    reasonForCatastrophicFailure = "Your browser doesn't support JavaScript copy-to-clipboard. Sorry!";
+  }
+
+  if (reasonForCatastrophicFailure) {
+    document.body.innerText = `THIS WON'T WORK FOR YOU. ${reasonForCatastrophicFailure}`;
+    return;
+  }
+
   flasher = new Flasher(document.getElementById('status'));
 
   Object.entries({'decrypt-button': decrypt,
@@ -202,7 +218,4 @@ window.addEventListener('load', () => {
   updateView();
 
 
-  if (window.crypto.subtle === undefined) {
-    alert("THIS WON'T WORK FOR YOU. Your browser isn't presenting the SubtleCrypto API that all major modern browsers do. (Note: Chrome, and possibly others, don't provide SubtleCrypto to JS loaded over http:// connections, only https://. This might be happening to you.)")
-  }
 });

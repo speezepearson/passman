@@ -47,13 +47,8 @@ function copyToClipboard(text) {
 
   textArea.select();
 
-  try {
-    var successful = globals.document.execCommand('copy');
-    var msg = successful ? 'successful' : 'unsuccessful';
-    console.log('Copying text command was ' + msg);
-  } catch (err) {
-    console.log('Oops, unable to copy');
-  }
+  var successful = globals.document.execCommand('copy');
+  if (!successful) throw 'Copying failed for some reason!'
 
   globals.document.body.removeChild(textArea);
 }
