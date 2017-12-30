@@ -15,27 +15,6 @@ var decryptedJ = null;
 
 var flasher;
 
-function obliterate(x) {
-  if (Array.isArray(x)) {
-    while (x.length > 0) {
-      obliterate(x[x.length-1]);
-      x.pop();
-    }
-  } else if (typeof x === 'object') {
-    Object.entries(x).forEach(([k,v]) => {
-      obliterate(v);
-      delete x[k];
-    });
-  }
-}
-
-function only(xs) {
-  if (xs.length !== 1) {
-    throw `expected 1 thing, got ${xs.length}: ${JSON.stringify(xs)}`
-  }
-  return xs[0];
-}
-
 function updateView() {
   var [accountRE, fieldRE] = ['account', 'field'].map(f => parseQuery(document.getElementById(`copy-field--${f}`).value));
   document.getElementById('view-holder').innerHTML = '';
@@ -77,9 +56,6 @@ function copyPlaintext() {
   flasher.flash(document.getElementById('copy-plaintext-button'), 'lightgreen', `
     Copied entire working memory to clipboard, as JSON.
   `);
-}
-function copyCiphertext() {
-  copyToClipboard(JSON.stringify(EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText).toJSONFriendlyObject()));
 }
 async function save() {
   var password = document.getElementById('password').value;
@@ -198,11 +174,6 @@ function importPlaintext() {
   flasher.flash(document.getElementById('import-plaintext-button'), 'lightgreen', `
     Merged the JSON from the "import plaintext" field into working memory.
   `);
-}
-
-function bulkImport() {
-  var importedJ = new SecretStore(JSON.parse($('#bulk-import-field').value));
-  j.foldIn(importedJ);
 }
 
 function setField() {

@@ -168,8 +168,6 @@ exports.parseQuery = parseQuery;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
 var _globals = __webpack_require__(0);
 
 var _globals2 = _interopRequireDefault(_globals);
@@ -201,31 +199,6 @@ window.addEventListener('load', _download.takeSnapshot);
 var decryptedJ = null;
 
 var flasher;
-
-function obliterate(x) {
-  if (Array.isArray(x)) {
-    while (x.length > 0) {
-      obliterate(x[x.length - 1]);
-      x.pop();
-    }
-  } else if ((typeof x === 'undefined' ? 'undefined' : _typeof(x)) === 'object') {
-    Object.entries(x).forEach(function (_ref) {
-      var _ref2 = _slicedToArray(_ref, 2),
-          k = _ref2[0],
-          v = _ref2[1];
-
-      obliterate(v);
-      delete x[k];
-    });
-  }
-}
-
-function only(xs) {
-  if (xs.length !== 1) {
-    throw 'expected 1 thing, got ' + xs.length + ': ' + JSON.stringify(xs);
-  }
-  return xs[0];
-}
 
 function updateView() {
   var _map = ['account', 'field'].map(function (f) {
@@ -271,9 +244,6 @@ function decrypt() {
 function copyPlaintext() {
   (0, _copy_to_clipboard2.default)(JSON.stringify(j.toJSONFriendlyObject(), null, 2));
   flasher.flash(document.getElementById('copy-plaintext-button'), 'lightgreen', '\n    Copied entire working memory to clipboard, as JSON.\n  ');
-}
-function copyCiphertext() {
-  (0, _copy_to_clipboard2.default)(JSON.stringify(_encrypted_message2.default.deserialize(document.getElementById('encrypted-message').innerText).toJSONFriendlyObject()));
 }
 function save() {
   var password, shouldContinue, oldJ, em;
@@ -381,11 +351,6 @@ function importPlaintext() {
   flasher.flash(document.getElementById('import-plaintext-button'), 'lightgreen', '\n    Merged the JSON from the "import plaintext" field into working memory.\n  ');
 }
 
-function bulkImport() {
-  var importedJ = new _secret_store.SecretStore(JSON.parse($('#bulk-import-field').value));
-  j.foldIn(importedJ);
-}
-
 function setField() {
   var _map3 = ['account', 'field', 'value'].map(function (f) {
     return document.getElementById('set-field--' + f).value;
@@ -407,10 +372,10 @@ window.addEventListener('load', function () {
     'copy-plaintext-button': copyPlaintext,
     'import-plaintext-button': importPlaintext,
     'import-ciphertext-button': importCiphertext,
-    'set-field-button': setField }).forEach(function (_ref3) {
-    var _ref4 = _slicedToArray(_ref3, 2),
-        id = _ref4[0],
-        clickCallback = _ref4[1];
+    'set-field-button': setField }).forEach(function (_ref) {
+    var _ref2 = _slicedToArray(_ref, 2),
+        id = _ref2[0],
+        clickCallback = _ref2[1];
 
     document.getElementById(id).addEventListener('click', clickCallback);
   });
