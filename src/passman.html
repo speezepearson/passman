@@ -133,7 +133,51 @@
 
   <details style="margin: 0.5em; border-left: 1px solid black; padding-left: 0.5em">
     <summary>Tutorial</summary>
-    TODO
+
+    <p>This password manager is a standalone HTML file that contains some encrypted data, as well as tools for querying it, manipulating it, and saving the manipulated data.</p>
+
+    <p>This approach is a little wonky in places for technical reasons, but on the plus side:</p>
+    <ul>
+      <li>
+        It's super-portable; assuming you have a modern browser, this will work out of the box, without installing anything or using any tools you're unfamiliar with. (Contrast with: GPG.)
+      </li>
+      <li>
+        It's super-simple. Your passwords are stored as a simple JSON object, serialized and encrypted with a standard, widely-supported stream cipher (specifically, AES-256 in GCM mode, the key computed by PBKDF2-ing the SHA-256 of your master password). You can trivially export all your data as JSON; and if this page "just stops working" somehow, you can easily recover your data using a text editor and a Python script (see "I can't recover my passwords!" below). (Contrast with: everything that's not GPG.)
+      </li>
+    </ul>
+
+    <p><strong>Model</strong></p>
+
+    <p>You have many accounts, and many secrets for each account. This password manager stores this as a two-level JSON object, like</p>
+    <pre>
+      {
+        "amazon": {
+          "email": "potato.king@gmail.com",
+          "password": "pw-for-amazon",
+          "username": "potato.king@gmail.com"
+        },
+        "facebook": {
+          "email": "yet.another.alias@gmail.com",
+          "password": "pw-for-facebook",
+          "username": "yet.another.alias@gmail.com"
+        },
+        "github": {
+          "password": "pw-for-github",
+          "username": "leethacker"
+        },
+        ...
+      }
+    </pre>
+
+    <p>It's <i>a little bad</i> if bad guys get ahold of the account/field names; it's <strong>disastrous</strong> if they get ahold of the values (e.g. "pw-for-amazon"). This password manager is designed to protect the account/field names <i>somewhat</i> (they're stored encrypted on disk, but still displayed on the screen), and the field values ("secrets") <strong>energetically</strong> (they are encrypted on disk, <i>never</i> displayed on the screen, and they only <i>ever</i> leave the JavaScript interpreter's memory in plaintext by being copied to the clipboard when you ask for them to be).</p>
+
+    <p>(The following model with "working memory" might be unintuitive. Sorry! The reasons are: JavaScript can't overwrite files, only download new ones; and browsers love caching, so we need to make sure none of your secrets ever touch anything the browser might save in a cache somewhere.)</p>
+
+    <p>At any given time, this page has one of these two-level objects stored in "working memory." This is the object that you query and modify. It starts out empty; you can modify that object in various ways, or embed it (encrypted) in a copy of this file which is downloaded.</p>
+    <p>There is also such an object embedded in <i>this</i> file. You can decrypt that encrypted object and merge it into working memory by typing the decryption password into the top-left password field, then hitting "Decrypt". (Go on, try it! The default password is "master".)</p>
+    <p>I imagine that most of your interactions with this page will be to copy passwords. In the right-hand pane, under "Filter working memory", you can type the first couple characters of an account's/field's name to filter working memory, then hit Enter (or click the button for a field) to copy the field to your clipboard. (Try it! With the default data, type "a" and "p" into the Account and Field inputs, then hit Enter -- "pw-for-amazon" will be copied to your clipboard.)</p>
+    <p>The left-hand pane provides tools for modifying working memory: you can update a single field, or paste a JSON object into the "Import JSON" text field and then click the button to import it. You can then save the page with the "Save" button in the top-left, or you'll be asked to save your data if you try to close the page while there are unsaved changes.</p>
+    <p>To wipe working memory (~= "log out" of a traditional password manager), just close/reload the page. This will obliterate the JavaScript interpreter state, which is the only place any secrets are ever stored.</p>
   </details>
 
   <details style="margin: 0.5em; border-left: 1px solid black; padding-left: 0.5em">
@@ -147,21 +191,15 @@
       If Cryptodome stopped being maintained or something: sorry, you'll have to roll up your sleeves and:
     </p>
     <ul>
-      <li>UTF-8 encode your master password</li>
-      <li>run that through SHA-256</li>
-      <li>run that hash through PBKDF2 (with the parameters given by the encrypted payload's <code>keyDerivationAlgorithm</code>)</li>
-      <li>use that key to decrypt the encrypted payload's <code>ciphertext</code> using the encrypted payload's <code>encryptionAlgorithm</code> (by default, AES-256 in Galois/Counter Mode).</li>
+      <li>pull the encrypted message out of this file (it's a JSON object inside the div with id="encrypted-message")</li>
+      <li>run your master password (UTF8-encoded) through SHA-256</li>
+      <li>run that hash through PBKDF2 (with the parameters given by the encrypted message's <code>keyDerivationAlgorithm</code>)</li>
+      <li>use that key to decrypt the encrypted message's <code>ciphertext</code> using the encrypted message's <code>encryptionAlgorithm</code> (by default, AES-256 in Galois/Counter Mode).</li>
     </ul>
+
+    (JavaScript combines the GCM authentication-tag with the ciphertext, and you may need to slice them apart if your crypto library expects them separately. The last 16 bytes of the encrypted message's "ciphertext" field are the tag, and the rest are the key.)
   </details>
 
-  <details style="margin: 0.5em; border-left: 1px solid black; padding-left: 0.5em">
-    <summary>Why does [UI feature] suck?</summary>
-    Maybe one of:
-    <ol>
-      <li>I try hard to make sure none of your secrets end up anywhere the browser might cache them -- notably, the JavaScript console, and anywhere in the DOM. This is rather constraining.</li>
-      <li>"Copy to clipboard" is only permitted as a direct result of a user action; no asynchronous copies are allowed. Unfortunately, the whole WebCrypto interface is asynchronous, so anything like "encrypt-and-copy" is impossible.</li>
-    </ol>
-  </details>
 </details>
 
 
