@@ -22,11 +22,10 @@ function updateView() {
 }
 
 var j = new SecretStore({});
-var decryptedJFingerprint = null;
 
-
+var lastSavedJFingerprint = null;
 function thereAreUnsavedChanges() {
-  return (j.nAccounts() > 0) && (decryptedJFingerprint !== j.fingerprint());
+  return (j.nAccounts() > 0) && (lastSavedJFingerprint !== j.fingerprint());
 }
 async function decrypt() {
 
@@ -43,7 +42,7 @@ async function decrypt() {
     return;
   }
   var decryptedJ = new SecretStore(JSON.parse(plaintext));
-  decryptedJFingerprint = decryptedJ.fingerprint();
+  lastSavedJFingerprint = decryptedJ.fingerprint();
   j.foldIn(decryptedJ);
   updateView();
   document.getElementById('copy-field--account').focus();
@@ -88,6 +87,7 @@ async function save() {
 
   var em = await EncryptedMessage.create(password, JSON.stringify(j.toJSONFriendlyObject()));
   downloadThisPageWithNewEncryptedMessage(em);
+  lastSavedJFingerprint = j.fingerprint();
   flasher.flash(document.getElementById('save-button'), 'lightgreen', `
     Downloaded a clone of this HTML file, except the ciphertext encodes this page's current working memory.
   `);
