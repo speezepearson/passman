@@ -155,16 +155,31 @@ function setField() {
   document.getElementById('set-field--value').value = '';
 }
 
+function failCatastrophically(reason) {
+  document.body.innerText = `THIS WON'T WORK FOR YOU. ${reason}`;
+  throw 'failed catastrophically';
+}
+
+const CHECK_COPY_OR_FAIL_EVENT_TYPES = ['keypress', 'click'];
+var checkCopyOrFail = (function() {
+  function listener() {
+    console.log('checking copyability')
+    CHECK_COPY_OR_FAIL_EVENT_TYPES.forEach(et => window.removeEventListener(et, listener));
+    try {
+      copyToClipboard('');
+    } catch (err) {
+      failCatastrophically("Your browser doesn't support JavaScript copy-to-clipboard. Sorry!");
+    }
+  }
+  return listener;
+})();
+CHECK_COPY_OR_FAIL_EVENT_TYPES.forEach(et => window.addEventListener(et, checkCopyOrFail));
+
 window.addEventListener('load', () => {
 
   var reasonForCatastrophicFailure = null;
   if (window.crypto.subtle === undefined) {
-    reasonForCatastrophicFailure = "Your browser isn't presenting the SubtleCrypto API that all major modern browsers do. (Note: Chrome, and possibly others, don't provide SubtleCrypto to JS loaded over http:// connections, only https://. This might be happening to you.)";
-  }
-  try {
-    copyToClipboard('');
-  } catch (err) {
-    reasonForCatastrophicFailure = "Your browser doesn't support JavaScript copy-to-clipboard. Sorry!";
+    failCatastrophically("Your browser isn't presenting the SubtleCrypto API that all major modern browsers do. (Note: Chrome, and possibly others, don't provide SubtleCrypto to JS loaded over http:// connections, only https://. This might be happening to you.)");
   }
 
   if (reasonForCatastrophicFailure) {

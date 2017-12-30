@@ -1,6 +1,6 @@
 <html>
 <head>
-  <title>Encrypted Text File</title>
+  <title>Passman</title>
   <style>
     #account, #field {
       width: 10em;
@@ -240,10 +240,7 @@ function decrypt() {
   });
 }
 function copyPlaintext() {
-  var prettyJSON = JSON.stringify(j.toJSONFriendlyObject(), null, 2);
-  flasher.doOrFlashRed(function () {
-    return (0, _copy_to_clipboard2.default)(prettyJSON);
-  }, "Your browser doesn't support JavaScript copy-to-clipboard. Sorry!");
+  (0, _copy_to_clipboard2.default)(JSON.stringify(j.toJSONFriendlyObject(), null, 2));
   flasher.flash('lightgreen', '\n    Copied entire working memory to clipboard, as JSON.\n  ');
 }
 function save() {
@@ -328,20 +325,40 @@ function setField() {
   document.getElementById('set-field--value').value = '';
 }
 
+function failCatastrophically(reason) {
+  document.body.innerText = 'THIS WON\'T WORK FOR YOU. ' + reason;
+  throw 'failed catastrophically';
+}
+
+var CHECK_COPY_OR_FAIL_EVENT_TYPES = ['keypress', 'click'];
+var checkCopyOrFail = function () {
+  function listener() {
+    console.log('checking copyability');
+    CHECK_COPY_OR_FAIL_EVENT_TYPES.forEach(function (et) {
+      return window.removeEventListener(et, listener);
+    });
+    try {
+      (0, _copy_to_clipboard2.default)('');
+    } catch (err) {
+      failCatastrophically("Your browser doesn't support JavaScript copy-to-clipboard. Sorry!");
+    }
+  }
+  return listener;
+}();
+CHECK_COPY_OR_FAIL_EVENT_TYPES.forEach(function (et) {
+  return window.addEventListener(et, checkCopyOrFail);
+});
+
 window.addEventListener('load', function () {
 
   var reasonForCatastrophicFailure = null;
   if (window.crypto.subtle === undefined) {
-    reasonForCatastrophicFailure = "Your browser isn't presenting the SubtleCrypto API that all major modern browsers do. (Note: Chrome, and possibly others, don't provide SubtleCrypto to JS loaded over http:// connections, only https://. This might be happening to you.)";
-  }
-  try {
-    (0, _copy_to_clipboard2.default)('');
-  } catch (err) {
-    reasonForCatastrophicFailure = "Your browser doesn't support JavaScript copy-to-clipboard. Sorry!";
+    failCatastrophically("Your browser isn't presenting the SubtleCrypto API that all major modern browsers do. (Note: Chrome, and possibly others, don't provide SubtleCrypto to JS loaded over http:// connections, only https://. This might be happening to you.)");
   }
 
   if (reasonForCatastrophicFailure) {
     document.body.innerText = 'THIS WON\'T WORK FOR YOU. ' + reasonForCatastrophicFailure;
+    return;
   }
 
   flasher = new _flash.Flasher(document.getElementById('status'));
@@ -394,6 +411,14 @@ window.addEventListener('load', function () {
     });
   });
   updateView();
+});
+
+window.addEventListener('keypress', function (e) {
+  // adapted from: https://stackoverflow.com/a/93836
+  if (!(e.which == 115 && e.ctrlKey) && !(e.which == 19)) return true;
+  save();
+  e.preventDefault();
+  return false;
 });
 
 /***/ }),
@@ -751,7 +776,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var globals = (0, _globals2.default)();
 
 function copyToClipboard(text) {
-  // source: https://stackoverflow.com/a/30810322
+  // adapted from: https://stackoverflow.com/a/30810322
+
+  var oldFocusElement = document.activeElement;
   var textArea = globals.document.createElement("textarea");
 
   //
@@ -797,8 +824,11 @@ function copyToClipboard(text) {
   textArea.select();
 
   var successful = globals.document.execCommand('copy');
+  if (!successful) throw 'Copying failed for some reason!';
 
   globals.document.body.removeChild(textArea);
+
+  oldFocusElement.focus();
 }
 
 exports.default = copyToClipboard;

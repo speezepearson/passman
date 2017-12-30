@@ -1,7 +1,9 @@
 import _getGlobals from './globals.js'; var globals = _getGlobals();
 
 function copyToClipboard(text) {
-  // source: https://stackoverflow.com/a/30810322
+  // adapted from: https://stackoverflow.com/a/30810322
+
+  var oldFocusElement = document.activeElement;
   var textArea = globals.document.createElement("textarea");
 
   //
@@ -51,6 +53,8 @@ function copyToClipboard(text) {
   if (!successful) throw 'Copying failed for some reason!'
 
   globals.document.body.removeChild(textArea);
+
+  oldFocusElement.focus();
 }
 
 export default copyToClipboard;
