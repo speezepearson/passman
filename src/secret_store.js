@@ -71,6 +71,7 @@ class SecretStore {
   }
   set(account, field, value) {
     if (value === '') {
+      if (this.data[account] === undefined) return;
       delete this.data[account][field];
       if (Object.keys(this.data[account]).length === 0) {
         delete this.data[account];
