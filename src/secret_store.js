@@ -44,6 +44,13 @@ class SecretStore {
     );
   }
 
+  stringify() {
+    return JSON.stringify(this.toJSONFriendlyObject());
+  }
+  static parse(s) {
+    return new SecretStore(JSON.parse(s));
+  }
+
   allFields() {
     var result = [];
     Object.entries(this.data).sort().forEach(([account, info]) => {

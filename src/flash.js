@@ -3,30 +3,27 @@ class Flasher {
     this.statusElement = statusElement;
   }
 
-  flash(element, color, message, duration=500) {
-    var oldColor = element.style['outline'];
-    element.style['outline'] = `5px solid ${color}`;
-    setTimeout(() => {
-      if (oldColor === undefined) delete element.style['outline'];
-      else element.style['outline'] = oldColor;
-    }, duration);
+  flash(color, message, duration=500) {
+    this.statusElement.style['background-color'] = color;
+    setTimeout(() => {this.statusElement.style['background-color'] = ''}, duration);
     this.statusElement.innerText = message.trim();
   }
 
-  doOrFlashRed(f, element, message, duration=500) {
+  doOrFlashRed(f, message, duration=500) {
     try {
       return f()
     } catch (err) {
-      this.flash(element, 'red', message+`\n(error: ${err})`, duration);
+      this.flash('pink', message+`\n(error: ${err})`, duration);
       throw err;
     }
   }
 
-  async awaitOrFlashRed(p, element ,message, duration=500) {
+  async awaitOrFlashRed(p, message, catchFollowup, duration=500) {
     try {
       return await p;
     } catch (err) {
-      this.flash(element, 'red', message+`\n(error: ${err})`, duration);
+      if (catchFollowup !== undefined) catchFollowup();
+      this.flash('pink', message+`\n(error: ${err})`, duration);
       throw err;
     }
   }

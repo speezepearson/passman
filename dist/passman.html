@@ -215,32 +215,55 @@ var lastSavedJFingerprint = null;
 function thereAreUnsavedChanges() {
   return j.nAccounts() > 0 && lastSavedJFingerprint !== j.fingerprint();
 }
+function foldInAndTally(j, j2) {
+  var oldNFields = j.allFields().length;
+  var nOverwrittenFields = j2.allFields().filter(function (_ref) {
+    var _ref2 = _slicedToArray(_ref, 3),
+        a = _ref2[0],
+        f = _ref2[1],
+        v = _ref2[2];
+
+    return j.get(a, f) !== undefined && v !== j.get(a, f);
+  }).length;
+  j.foldIn(j2);
+  var newNFields = j.allFields().length;
+  var nAddedFields = newNFields - oldNFields;
+  var nAgreedUponFields = j2.allFields().length - nAddedFields - nOverwrittenFields;
+  return {
+    overwritten: nOverwrittenFields,
+    agreedUpon: nAgreedUponFields,
+    added: nAddedFields
+  };
+}
+
 function decrypt() {
-  var em, plaintext, decryptedJ;
+  var em, plaintext, decryptedJ, tally;
   return Promise.resolve().then(function () {
     em = _encrypted_message2.default.deserialize(document.getElementById('encrypted-message').innerText);
     return Promise.resolve().then(function () {
-      return em.decrypt(document.getElementById('decryption-password').value);
+      return flasher.awaitOrFlashRed(em.decrypt(document.getElementById('decryption-password').value), "Tried to decrypt the ciphertext in this HTML file, but password was incorrect.");
     }).then(function (_resp) {
       plaintext = _resp;
     }).catch(function (err) {
-      flasher.flash(document.getElementById('decryption-password'), 'red', '\n      Tried to decrypt the ciphertext in this HTML file, but password was incorrect.\n      (error: ' + err + ')\n    ');
       document.getElementById('decryption-password').focus();
-      return;
+      throw err;
     });
   }).then(function () {
-    decryptedJ = new _secret_store.SecretStore(JSON.parse(plaintext));
+    decryptedJ = flasher.doOrFlashRed(function () {
+      return _secret_store.SecretStore.parse(plaintext);
+    }, "Tried to decrypt the ciphertext in this HTML file, but the JSON was malformed. (This is REALLY WEIRD.)");
 
     lastSavedJFingerprint = decryptedJ.fingerprint();
-    j.foldIn(decryptedJ);
+    tally = foldInAndTally(j, decryptedJ);
+
     updateView();
     document.getElementById('copy-field--account').focus();
-    flasher.flash(document.getElementById('decrypt-button'), 'lightgreen', '\n    Decrypted the ciphertext embedded in this HTML file, and merged it into working memory.\n  ');
+    flasher.flash('lightgreen', '\n    Decrypted the ciphertext embedded in this HTML file, and merged it into working memory.\n    (' + tally.added + ' fields added, ' + tally.overwritten + ' modified, ' + tally.agreedUpon + ' agreed-upon)\n  ');
   });
 }
 function copyPlaintext() {
   (0, _copy_to_clipboard2.default)(JSON.stringify(j.toJSONFriendlyObject(), null, 2));
-  flasher.flash(document.getElementById('copy-plaintext-button'), 'lightgreen', '\n    Copied entire working memory to clipboard, as JSON.\n  ');
+  flasher.flash('lightgreen', '\n    Copied entire working memory to clipboard, as JSON.\n  ');
 }
 function save() {
   var password, shouldContinue, oldPassword, oldJ, em;
@@ -254,30 +277,30 @@ function save() {
       oldJ = JSON.parse(_resp);
     }).catch(function (err) {
       if (err.name !== 'OperationError') {
-        flasher.flash(document.getElementById('save-button'), 'red', '\n        Something REAL WEIRD happened while checking whether the password you entered matched the one for this file.\n        This should never happen.\n      ');
+        flasher.flash('pink', '\n        Something REAL WEIRD happened while checking whether the password you entered matched the one for this file.\n        This should never happen.\n      ');
         throw err;
       }
       shouldContinue = confirm("You are about to download a passman file with a different password than the original one! Is that what you want?");
     });
   }).then(function () {
     if (!shouldContinue) {
-      flasher.flash(document.getElementById('save-button'), 'red', 'Would have saved, but you aborted.');
+      flasher.flash('pink', 'Would have saved, but you aborted.');
     } else {
 
       if (password.length < 6) {
         shouldContinue = confirm('You password is only ' + password.length + ' characters long. I won\'t stop you, but please, MAKE REAL SURE THIS IS INTENTIONAL before saving.');
       }
       if (!shouldContinue) {
-        flasher.flash(document.getElementById('save-button'), 'red', 'Would have saved, but you aborted.');
+        flasher.flash('pink', 'Would have saved, but you aborted.');
       } else {
         return Promise.resolve().then(function () {
-          return _encrypted_message2.default.create(password, JSON.stringify(j.toJSONFriendlyObject()));
+          return _encrypted_message2.default.create(password, j.stringify());
         }).then(function (_resp) {
           em = _resp;
 
           (0, _download.downloadThisPageWithNewEncryptedMessage)(em);
           lastSavedJFingerprint = j.fingerprint();
-          flasher.flash(document.getElementById('save-button'), 'lightgreen', '\n    Downloaded a clone of this HTML file, except the ciphertext encodes this page\'s current working memory.\n  ');
+          flasher.flash('lightgreen', '\n    Downloaded a clone of this HTML file, except the ciphertext encodes this page\'s current working memory.\n  ');
         });
       }
     }
@@ -294,13 +317,12 @@ function onEnter(element, callback) {
 
 function importPlaintext() {
   var importedJ = flasher.doOrFlashRed(function () {
-    return JSON.parse(document.getElementById('import-plaintext-field').value);
-  }, document.getElementById('import-plaintext-field'), "Tried to merge the 'Import JSON' field into working memory, but failed to parse the JSON.");
-  flasher.doOrFlashRed(function () {
-    return j.foldIn(new _secret_store.SecretStore(importedJ));
-  }, document.getElementById('import-plaintext-button'), 'Tried to merge the \'Import JSON\' field into working memory, but the JSON object you pasted in doesn\'t have the expected shape. (It should be an exactly-two-level object whose leaf values are strings, like {"a": {"b": "c"}}, and not like {"a": {"b": ["c"]}} or {"a": {"b": 3}} or {"a": {"b": {}}}.)');
+    return _secret_store.SecretStore.parse(document.getElementById('import-plaintext-field').value);
+  }, "Tried to merge the 'Import JSON' field into working memory, but the JSON was malformed.");
+  var tally = foldInAndTally(j, importedJ);
+  document.getElementById('import-plaintext-field').value = '';
   updateView();
-  flasher.flash(document.getElementById('import-plaintext-button'), 'lightgreen', '\n    Merged the JSON from the "import plaintext" field into working memory.\n  ');
+  flasher.flash('lightgreen', '\n    Merged the JSON from the \'Import JSON\' field into working memory.\n    (' + tally.added + ' fields added, ' + tally.overwritten + ' modified, ' + tally.agreedUpon + ' agreed-upon)\n  ');
 }
 
 function setField() {
@@ -312,9 +334,16 @@ function setField() {
       field = _map4[1],
       value = _map4[2];
 
+  var fieldExists = j.get(account, field) !== undefined;
+  var deleting = value === '';
+  if (deleting && !fieldExists) {
+    flasher.flash('pink', '\n      Tried to delete ' + account + '.' + field + ', but that field didn\'t exist anyway.\n    ');
+    return;
+  }
+
   j.set(account, field, value);
   updateView();
-  flasher.flash(document.getElementById('set-field--value'), 'lightgreen', '\n    Set ' + account + '.' + field + '\n  ');
+  flasher.flash('lightgreen', '\n    ' + (deleting ? 'Deleted' : 'Set') + ' ' + account + '.' + field + '.\n  ');
   document.getElementById('set-field--value').value = '';
 }
 
@@ -325,10 +354,10 @@ window.addEventListener('load', function () {
     'save-button': save,
     'copy-plaintext-button': copyPlaintext,
     'import-plaintext-button': importPlaintext,
-    'set-field-button': setField }).forEach(function (_ref) {
-    var _ref2 = _slicedToArray(_ref, 2),
-        id = _ref2[0],
-        clickCallback = _ref2[1];
+    'set-field-button': setField }).forEach(function (_ref3) {
+    var _ref4 = _slicedToArray(_ref3, 2),
+        id = _ref4[0],
+        clickCallback = _ref4[1];
 
     document.getElementById(id).addEventListener('click', clickCallback);
   });
@@ -343,12 +372,12 @@ window.addEventListener('load', function () {
       var account = e.target.getAttribute('data-account');
       var field = e.target.getAttribute('data-field');
       (0, _copy_to_clipboard2.default)(j.toJSONFriendlyObject()[account][field]);
-      flasher.flash(e.target, 'lightgreen', '\n        Copied ' + field + ' for ' + account + ' to clipboard.\n      ');
+      flasher.flash('lightgreen', '\n        Copied ' + field + ' for ' + account + ' to clipboard.\n      ');
     }
   });
 
   document.getElementById('decryption-password').focus();
-  flasher.flash(document.getElementById('decryption-password'), 'red', 'Enter decryption password in top-left to decrypt the passwords in this file.');
+  flasher.flash('pink', 'Enter decryption password in top-left to decrypt the passwords in this file.');
   onEnter(document.getElementById('decryption-password'), function () {
     document.getElementById('decrypt-button').click();
   });
@@ -449,33 +478,34 @@ var Flasher = function () {
 
   _createClass(Flasher, [{
     key: 'flash',
-    value: function flash(element, color, message) {
-      var duration = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 500;
+    value: function flash(color, message) {
+      var _this = this;
 
-      var oldColor = element.style['outline'];
-      element.style['outline'] = '5px solid ' + color;
+      var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 500;
+
+      this.statusElement.style['background-color'] = color;
       setTimeout(function () {
-        if (oldColor === undefined) delete element.style['outline'];else element.style['outline'] = oldColor;
+        _this.statusElement.style['background-color'] = '';
       }, duration);
       this.statusElement.innerText = message.trim();
     }
   }, {
     key: 'doOrFlashRed',
-    value: function doOrFlashRed(f, element, message) {
-      var duration = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 500;
+    value: function doOrFlashRed(f, message) {
+      var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 500;
 
       try {
         return f();
       } catch (err) {
-        this.flash(element, 'red', message + ('\n(error: ' + err + ')'), duration);
+        this.flash('pink', message + ('\n(error: ' + err + ')'), duration);
         throw err;
       }
     }
   }, {
     key: 'awaitOrFlashRed',
-    value: function awaitOrFlashRed(p, element, message) {
+    value: function awaitOrFlashRed(p, message, catchFollowup) {
       var duration,
-          _this = this,
+          _this2 = this,
           _arguments = arguments;
 
       duration = _arguments.length > 3 && _arguments[3] !== undefined ? _arguments[3] : 500;
@@ -483,7 +513,9 @@ var Flasher = function () {
       try {
         return p;
       } catch (err) {
-        _this.flash(element, 'red', message + ('\n(error: ' + err + ')'), duration);
+        if (catchFollowup !== undefined) {
+          catchFollowup();
+        }_this2.flash('pink', message + ('\n(error: ' + err + ')'), duration);
         throw err;
       }
     }
@@ -837,6 +869,11 @@ var SecretStore = function () {
       }));
     }
   }, {
+    key: 'stringify',
+    value: function stringify() {
+      return JSON.stringify(this.toJSONFriendlyObject());
+    }
+  }, {
     key: 'allFields',
     value: function allFields() {
       var result = [];
@@ -942,6 +979,11 @@ var SecretStore = function () {
     key: 'fromJSONFriendlyObject',
     value: function fromJSONFriendlyObject(data) {
       return new SecretStore(data);
+    }
+  }, {
+    key: 'parse',
+    value: function parse(s) {
+      return new SecretStore(JSON.parse(s));
     }
   }]);
 
