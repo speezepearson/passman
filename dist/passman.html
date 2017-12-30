@@ -293,53 +293,6 @@ function onEnter(element, callback) {
     }
   });
 }
-function importCiphertext() {
-  var file, html, doc, text, text, importedPlaintext, importedJ;
-  return Promise.resolve().then(function () {
-    file = document.getElementById('import-ciphertext-file').files[0];
-
-    if (file === undefined) {
-      flasher.flash(document.getElementById('import-ciphertext-file'), 'red', '\n      Tried to merge the ciphertext from another Passman file into working memory,\n      but no file was selected.\n    ');
-    } else {
-      return Promise.resolve().then(function () {
-        return new Promise(function (resolve, reject) {
-          var reader = new FileReader();
-          reader.onload = function (e) {
-            try {
-              resolve(e.target.result);
-            } catch (err) {
-              $this.fileInput.value = [];
-              reject(err);
-            }
-          };
-          reader.readAsText(file);
-        });
-      }).then(function (_resp) {
-        html = _resp;
-        doc = flasher.doOrFlashRed(function () {
-          doc = new DOMParser().parseFromString(html, 'text/html');
-        }, document.getElementById('import-ciphertext-file'), "Tried to merge the ciphertext from another Passman file into working memory, but selected file couldn't be parsed as HTML.");
-        text = flasher.doOrFlashRed(function () {
-          doc.getElementById('encrypted-message').innerText;
-        }, document.getElementById('import-ciphertext-file'), "Tried to merge the ciphertext from another Passman file into working memory, but there was no element with id='encrypted-message'.");
-        text = flasher.doOrFlashRed(function () {
-          _encrypted_message2.default.deserialize(text);
-        }, document.getElementById('import-ciphertext-file'), "Tried to merge the ciphertext from another Passman file into working memory, but couldn't parse the ciphertext from it (this is extra weird -- maybe I made a non-backwards-compatible change to the encrypted-message format?).");
-        importedPlaintext = flasher.awaitOrFlashRed(em.decrypt(document.getElementById('import-ciphertext-password').value), document.getElementById('import-ciphertext-password'), "Tried to merge the ciphertext from another Passman file into working memory, but password was wrong to decrypt the other file's ciphertext.");
-        importedJ = flasher.doOrFlashRed(function () {
-          JSON.parse(importedPlaintext);
-        }, document.getElementById('import-ciphertext-password'), "Tried to merge the ciphertext from another Passman file into working memory, but failed to parse the JSON. (This is REALLY WEIRD.)");
-
-
-        flasher.doOrFlashRed(function () {
-          return j.foldIn(new _secret_store.SecretStore(importedJ));
-        }, document.getElementById('import-ciphertext-button'), "Tried to merge the ciphertext from another Passman file into working memory, but the decrypted JSON object from the other file doesn't have the expected shape. (This is REALLY WEIRD.)");
-        updateView();
-        flasher.flash(document.getElementById('password'), 'lightgreen', '\n    Merged the ciphertext from another Passman file into working memory.\n  ');
-      });
-    }
-  }).then(function () {});
-}
 
 function importPlaintext() {
   var importedJ = flasher.doOrFlashRed(function () {
@@ -372,7 +325,6 @@ window.addEventListener('load', function () {
     'save-button': save,
     'copy-plaintext-button': copyPlaintext,
     'import-plaintext-button': importPlaintext,
-    'import-ciphertext-button': importCiphertext,
     'set-field-button': setField }).forEach(function (_ref) {
     var _ref2 = _slicedToArray(_ref, 2),
         id = _ref2[0],
@@ -1054,11 +1006,6 @@ exports.SecretStore = SecretStore;
         <li class="bordered">
           <button id="import-plaintext-button">Import JSON</button> by pasting it here:
           <input id="import-plaintext-field" type="password" />
-        </li>
-        <li class="bordered">
-          <button id="import-ciphertext-button">Decrypt and Import</button> another Passman file: <br/>
-          <input id="import-ciphertext-password" type="password" placeholder="decryption password" />
-          <input id="import-ciphertext-file" type="file" />
         </li>
       </ul>
     </td>

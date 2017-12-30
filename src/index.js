@@ -100,64 +100,6 @@ function onEnter(element, callback) {
     }
   });
 }
-async function importCiphertext() {
-  var file = document.getElementById('import-ciphertext-file').files[0];
-  if (file === undefined) {
-    flasher.flash(document.getElementById('import-ciphertext-file'), 'red', `
-      Tried to merge the ciphertext from another Passman file into working memory,
-      but no file was selected.
-    `);
-    return;
-  }
-  var html = await new Promise((resolve, reject) => {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      try {
-        resolve(e.target.result);
-      } catch (err) {
-        $this.fileInput.value = [];
-        reject(err);
-      }
-    }
-    reader.readAsText(file);
-  });
-
-  var doc = flasher.doOrFlashRed(
-    () => {doc = new DOMParser().parseFromString(html, 'text/html')},
-    document.getElementById('import-ciphertext-file'),
-    "Tried to merge the ciphertext from another Passman file into working memory, but selected file couldn't be parsed as HTML."
-  );
-  var text = flasher.doOrFlashRed(
-    () => {doc.getElementById('encrypted-message').innerText},
-    document.getElementById('import-ciphertext-file'),
-    "Tried to merge the ciphertext from another Passman file into working memory, but there was no element with id='encrypted-message'."
-  );
-  var text = flasher.doOrFlashRed(
-    () => {EncryptedMessage.deserialize(text)},
-    document.getElementById('import-ciphertext-file'),
-    "Tried to merge the ciphertext from another Passman file into working memory, but couldn't parse the ciphertext from it (this is extra weird -- maybe I made a non-backwards-compatible change to the encrypted-message format?)."
-  );
-  var importedPlaintext = flasher.awaitOrFlashRed(
-    em.decrypt(document.getElementById('import-ciphertext-password').value),
-    document.getElementById('import-ciphertext-password'),
-    "Tried to merge the ciphertext from another Passman file into working memory, but password was wrong to decrypt the other file's ciphertext."
-  );
-  var importedJ = flasher.doOrFlashRed(
-    () => {JSON.parse(importedPlaintext);},
-    document.getElementById('import-ciphertext-password'),
-    "Tried to merge the ciphertext from another Passman file into working memory, but failed to parse the JSON. (This is REALLY WEIRD.)"
-  );
-
-  flasher.doOrFlashRed(
-    () => j.foldIn(new SecretStore(importedJ)),
-    document.getElementById('import-ciphertext-button'),
-    "Tried to merge the ciphertext from another Passman file into working memory, but the decrypted JSON object from the other file doesn't have the expected shape. (This is REALLY WEIRD.)"
-  );
-  updateView();
-  flasher.flash(document.getElementById('password'), 'lightgreen', `
-    Merged the ciphertext from another Passman file into working memory.
-  `);
-}
 
 function importPlaintext() {
   var importedJ = flasher.doOrFlashRed(
@@ -191,7 +133,6 @@ window.addEventListener('load', () => {
                   'save-button': save,
                   'copy-plaintext-button': copyPlaintext,
                   'import-plaintext-button': importPlaintext,
-                  'import-ciphertext-button': importCiphertext,
                   'set-field-button': setField})
         .forEach(([id, clickCallback]) => {
           document.getElementById(id).addEventListener('click', clickCallback);
