@@ -234,3 +234,11 @@ window.addEventListener('load', () => {
 
 
 });
+
+window.addEventListener('keypress', (e) => {
+  // adapted from: https://stackoverflow.com/a/93836
+  if (!(e.which == 115 && e.ctrlKey) && !(e.which == 19)) return true;
+  save();
+  e.preventDefault();
+  return false;
+})
