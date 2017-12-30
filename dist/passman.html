@@ -269,7 +269,7 @@ function decrypt() {
   });
 }
 function copyPlaintext() {
-  (0, _copy_to_clipboard2.default)(JSON.stringify(j.data, null, 2));
+  (0, _copy_to_clipboard2.default)(JSON.stringify(j.toJSONFriendlyObject(), null, 2));
   flasher.flash(document.getElementById('copy-plaintext-button'), 'lightgreen', '\n    Copied entire working memory to clipboard, as JSON.\n  ');
 }
 function copyCiphertext() {
@@ -303,7 +303,7 @@ function save() {
         flasher.flash(document.getElementById('save-button'), 'red', 'Would have saved, but you aborted.');
       } else {
         return Promise.resolve().then(function () {
-          return _encrypted_message2.default.create(password, JSON.stringify(j.data));
+          return _encrypted_message2.default.create(password, JSON.stringify(j.toJSONFriendlyObject()));
         }).then(function (_resp) {
           em = _resp;
 
@@ -424,7 +424,7 @@ window.addEventListener('load', function () {
     if (e.target.classList.contains('copy-button')) {
       var account = e.target.getAttribute('data-account');
       var field = e.target.getAttribute('data-field');
-      (0, _copy_to_clipboard2.default)(j.get(account, field));
+      (0, _copy_to_clipboard2.default)(j.toJSONFriendlyObject()[account][field]);
       flasher.flash(e.target, 'lightgreen', '\n        Copied ' + field + ' for ' + account + ' to clipboard.\n      ');
     }
   });
@@ -892,6 +892,11 @@ var SecretStore = function () {
   }
 
   _createClass(SecretStore, [{
+    key: 'toJSONFriendlyObject',
+    value: function toJSONFriendlyObject() {
+      return this.data;
+    }
+  }, {
     key: 'nAccounts',
     value: function nAccounts() {
       return Object.values(this.data).length;
@@ -1014,6 +1019,11 @@ var SecretStore = function () {
         });
       });
       return result;
+    }
+  }], [{
+    key: 'fromJSONFriendlyObject',
+    value: function fromJSONFriendlyObject(data) {
+      return new SecretStore(data);
     }
   }]);
 

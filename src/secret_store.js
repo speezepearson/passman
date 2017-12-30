@@ -22,6 +22,13 @@ class SecretStore {
     this.data = data;
   }
 
+  toJSONFriendlyObject() {
+    return this.data;
+  }
+  static fromJSONFriendlyObject(data) {
+    return new SecretStore(data);
+  }
+
   nAccounts() {
     return Object.values(this.data).length;
   }

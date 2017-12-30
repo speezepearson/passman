@@ -73,7 +73,7 @@ async function decrypt() {
   `);
 }
 function copyPlaintext() {
-  copyToClipboard(JSON.stringify(j.data, null, 2));
+  copyToClipboard(JSON.stringify(j.toJSONFriendlyObject(), null, 2));
   flasher.flash(document.getElementById('copy-plaintext-button'), 'lightgreen', `
     Copied entire working memory to clipboard, as JSON.
   `);
@@ -110,7 +110,7 @@ async function save() {
     return;
   }
 
-  var em = await EncryptedMessage.create(password, JSON.stringify(j.data));
+  var em = await EncryptedMessage.create(password, JSON.stringify(j.toJSONFriendlyObject()));
   downloadThisPageWithNewEncryptedMessage(em);
   flasher.flash(document.getElementById('save-button'), 'lightgreen', `
     Downloaded a clone of this HTML file, except the ciphertext encodes this page's current working memory.
@@ -236,7 +236,7 @@ window.addEventListener('load', () => {
     if (e.target.classList.contains('copy-button')) {
       var account = e.target.getAttribute('data-account');
       var field = e.target.getAttribute('data-field');
-      copyToClipboard(j.get(account, field));
+      copyToClipboard(j.toJSONFriendlyObject()[account][field]);
       flasher.flash(e.target, 'lightgreen', `
         Copied ${field} for ${account} to clipboard.
       `);
