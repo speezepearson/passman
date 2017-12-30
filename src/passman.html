@@ -43,6 +43,15 @@
       align-items: center;
     }
 
+    ul.spacey > li {
+      margin-bottom: 1em;
+    }
+
+    .bordered {
+      border: 1px solid black;
+      padding: 0.2em;
+    }
+
     /* source: https://stackoverflow.com/a/6497462 */
     .horizontal-viewport-wrapper { overflow: scroll; width: 100%; height: 4em; }
     .horizontal-viewport { width: 200em; }
@@ -58,21 +67,19 @@
 
 <table>
   <tr>
-    <td style="padding: 1em; border: 5px solid black; height: 1px; width: 50%">
+    <td style="padding: 1em; border: 5px solid black; height: 1px; width: 40%">
       <input type="password" id="password" placeholder="decryption password" />
       <button id="decrypt-button">Decrypt</button>
       <button id="save-button">Save</button>
     </td>
 
-    <td rowspan="3" style="padding: 1em; border: 5px solid black; height: 100%; width: 50%">
-      <div id="view-holder"></div>
-    </td>
-  </tr>
-  <tr>
-    <td style="padding: 1em; border: 5px solid black; height: 100%">
+    <td rowspan="2" style="padding: 1em; border: 5px solid black; height: 100%; width: 60%">
       <strong>Query Working Memory</strong>
-      <ul>
+      <ul class="spacey">
         <li>
+          <button id="copy-plaintext-button" class="unlocked-only">Copy Working Memory as JSON</button>
+        </li>
+        <li class="bordered">
           Filter working memory: <br />
           <input type="text" class="query-field" id="copy-field--account" placeholder="account" /><input type="text" class="query-field" id="copy-field--field" placeholder="field" />
 
@@ -81,29 +88,30 @@
             <li>(Space means "1 or more characters", so e.g. "a z" would match "amazon")</li>
             <li>(hit Enter to copy first match)</li>
           </ul>
-        </li>
-        <li>
-          <button id="copy-plaintext-button" class="unlocked-only">Copy Working Memory as JSON</button>
+
+          <div id="view-holder"></div>
+
         </li>
       </ul>
     </td>
+
   </tr>
   <tr>
     <td style="padding: 1em; border: 5px solid black">
       <strong>Update Working Memory</strong>
-      <ul>
-        <li style="border: 1px solid black; margin-bottom: 1em">
+      <ul class="spacey">
+        <li class="bordered">
           Set
           <input type="text" class="query-field" id="set-field--account" placeholder="account" /><input type="text" class="query-field" id="set-field--field" placeholder="field" />
           to
           <input type="password" id="set-field--value" placeholder="new value" />
           <button id="set-field-button">Set</button>
         </li>
-        <li style="border: 1px solid black; margin-bottom: 1em">
+        <li class="bordered">
           <button id="import-plaintext-button">Import JSON</button> by pasting it here:
           <input id="import-plaintext-field" type="password" />
         </li>
-        <li style="border: 1px solid black; margin-bottom: 1em">
+        <li class="bordered">
           <button id="import-ciphertext-button">Decrypt and Import</button> another Passman file: <br/>
           <input id="import-ciphertext-password" type="password" placeholder="decryption password" />
           <input id="import-ciphertext-file" type="file" />
