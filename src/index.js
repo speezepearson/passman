@@ -32,13 +32,13 @@ async function decrypt() {
   var em = EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText);
   var plaintext;
   try {
-    plaintext = await em.decrypt(document.getElementById('password').value);
+    plaintext = await em.decrypt(document.getElementById('decryption-password').value);
   } catch (err) {
-    flasher.flash(document.getElementById('password'), 'red', `
+    flasher.flash(document.getElementById('decryption-password'), 'red', `
       Tried to decrypt the ciphertext in this HTML file, but password was incorrect.
       (error: ${err})
     `);
-    document.getElementById('password').focus();
+    document.getElementById('decryption-password').focus();
     return;
   }
   var decryptedJ = new SecretStore(JSON.parse(plaintext));
@@ -57,8 +57,10 @@ function copyPlaintext() {
   `);
 }
 async function save() {
-  var password = document.getElementById('password').value;
+  var password = document.getElementById('encryption-password').value;
   var shouldContinue = true;
+
+  var oldPassword = document.getElementById('decryption-password').value;
   var oldJ;
   try {
     oldJ = JSON.parse(await EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText).decrypt(password));
@@ -129,6 +131,8 @@ function setField() {
 }
 
 window.addEventListener('load', () => {
+  flasher = new Flasher(document.getElementById('status'));
+
   Object.entries({'decrypt-button': decrypt,
                   'save-button': save,
                   'copy-plaintext-button': copyPlaintext,
@@ -155,8 +159,13 @@ window.addEventListener('load', () => {
     }
   });
 
-  document.getElementById('password').focus();
-  onEnter(document.getElementById('password'), () => {document.getElementById('decrypt-button').click();});
+  document.getElementById('decryption-password').focus();
+  flasher.flash(
+    document.getElementById('decryption-password'),
+    'red',
+    'Enter decryption password in top-left to decrypt the passwords in this file.'
+  );
+  onEnter(document.getElementById('decryption-password'), () => {document.getElementById('decrypt-button').click();});
   onEnter(document.getElementById('set-field--value'), () => {document.getElementById('set-field-button').click();})
 
   window.onbeforeunload = () => {
@@ -171,7 +180,6 @@ window.addEventListener('load', () => {
   });
   updateView();
 
-  flasher = new Flasher(document.getElementById('status'));
 
   if (window.crypto.subtle === undefined) {
     alert("THIS WON'T WORK FOR YOU. Your browser isn't presenting the SubtleCrypto API that all major modern browsers do. (Note: Chrome, and possibly others, don't provide SubtleCrypto to JS loaded over http:// connections, only https://. This might be happening to you.)")

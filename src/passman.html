@@ -44,10 +44,10 @@
     }
 
     ul.spacey > li {
-      margin-bottom: 1em;
+      margin-bottom: 1.5em;
     }
 
-    .bordered {
+    . {
       border: 1px solid black;
       padding: 0.2em;
     }
@@ -68,18 +68,26 @@
 <table>
   <tr>
     <td style="padding: 1em; border: 5px solid black; height: 1px; width: 40%">
-      <input type="password" id="password" placeholder="decryption password" />
-      <button id="decrypt-button">Decrypt</button>
-      <button id="save-button">Save</button>
+      <p><strong>Load/Save</strong></p>
+      <ul class="">
+        <li>
+          <input type="password" id="decryption-password" placeholder="decryption password" />
+          <button id="decrypt-button">Decrypt To Working Memory</button>
+        </li>
+        <li>
+          <input type="password" id="encryption-password" placeholder="encryption password" />
+          <button id="save-button">Encrypt &amp; Save Working Memory</button>
+        </li>
+  </ul>
     </td>
 
     <td rowspan="2" style="padding: 1em; border: 5px solid black; height: 100%; width: 60%">
       <strong>Query Working Memory</strong>
       <ul class="spacey">
         <li>
-          <button id="copy-plaintext-button" class="unlocked-only">Copy Working Memory as JSON</button>
+          <button id="copy-plaintext-button" class="unlocked-only">Copy Working Memory To Clipboard As JSON</button>
         </li>
-        <li class="bordered">
+        <li class="">
           Filter working memory: <br />
           <input type="text" class="query-field" id="copy-field--account" placeholder="account" /><input type="text" class="query-field" id="copy-field--field" placeholder="field" />
 
@@ -98,16 +106,16 @@
   </tr>
   <tr>
     <td style="padding: 1em; border: 5px solid black">
-      <strong>Update Working Memory</strong>
+      <strong>Modify Working Memory</strong>
       <ul class="spacey">
-        <li class="bordered">
-          Set
+        <li class="">
+          <button id="set-field-button">Set</button>
           <input type="text" class="query-field" id="set-field--account" placeholder="account" /><input type="text" class="query-field" id="set-field--field" placeholder="field" />
           to
           <input type="password" id="set-field--value" placeholder="new value" />
-          <button id="set-field-button">Set</button>
+          (leave empty to delete)
         </li>
-        <li class="bordered">
+        <li class="">
           <button id="import-plaintext-button">Import JSON</button> by pasting it here:
           <input id="import-plaintext-field" type="password" />
         </li>
