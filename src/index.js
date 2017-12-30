@@ -260,4 +260,8 @@ window.addEventListener('load', () => {
   updateView();
 
   flasher = new Flasher(document.getElementById('status'));
+
+  if (window.crypto.subtle === undefined) {
+    alert("THIS WON'T WORK FOR YOU. Your browser isn't presenting the SubtleCrypto API that all major modern browsers do. (Note: Chrome, and possibly others, don't provide SubtleCrypto to JS loaded over http:// connections, only https://. This might be happening to you.)")
+  }
 });
