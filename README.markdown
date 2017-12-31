@@ -93,6 +93,12 @@ Don't worry! If the Passman page somehow stops working for you, you can use [thi
 If even _that_ doesn't work for whatever reason, you'll have to roll up your sleeves and code a little. What you need to know:
 
 - There's a JSON object inside the HTML element with `id="encrypted-message"`. It specifies a `keyDerivationAlgorithm`, an `encryptionAlgorithm`, and some `ciphertext`. All the arrays of numbers from 0 to 255 represent bytestrings.
-- The `keyDerivationAlgorithm` describes how to turn the decryption password into a cryptogaphic key: for the foreseeable future, it uses PBKDF2, with the `keyDerivationAlgorithm` JSON object specifying the `salt` and number of `iterations`.
+- The `keyDerivationAlgorithm` describes how to turn the decryption password into a cryptogaphic key: for the foreseeable future, it uses the PBKDF2 of the SHA-256 of the password, with the `keyDerivationAlgorithm` JSON object specifying the `salt` and number of `iterations`.
 - The `encryptionAlgorithm` describes the cipher used to encrypt your passwords. At time of writing, it uses AES-256 run in Galois/Counter Mode (GCM), with the `encryptionAlgorithm` JSON object specifying the IV (`iv`).
 - The `ciphertext` contains the encrypted message, _and_ the GCM authentication tag. The tag is the last 16 bytes, and may have to be separated from the ciphertext depending on your crypto library's convention.
+
+So, to decrypt:
+
+- UTF8-encode the decryption password, SHA-256 it, and run that through PBKDF2, with the salt / number of iterations specified by the `keyDerivationAlgorithm`
+- Take the `ciphertext`, and decrypt it with that key, using the algorithm/IV defined by `encryptionAlgorithm`. (You may have to slice off the last 16 bytes if the cipher is in Galois/Counter mode.)
+- You're done! That's the UTF8-encoded JSON string containing your passwords.
