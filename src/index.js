@@ -17,19 +17,19 @@ var decryptedJ = null;
 var flasher;
 
 function filteredJ() {
-  var [accountRE, fieldRE] = ['account', 'field'].map(f => parseQuery(document.getElementById(`copy-field--${f}`).value));
+  var [accountRE, fieldRE] = ['account', 'field'].map(f => parseQuery(elem(`copy-field--${f}`).value));
   return j.filter(accountRE, fieldRE);
 }
 
 function updateView() {
-  document.getElementById('view-holder').innerHTML = '';
+  elem('view-holder').innerHTML = '';
   var searchResults = filteredJ();
   var table = searchResults.buildView();
 
   var headerRow = addNewChild(table, 'tr', false);
   addNewChild(headerRow, 'th').innerText = `${searchResults.nAccounts()}/${j.nAccounts()} accounts match`;
   addNewChild(headerRow, 'th').innerText = `${searchResults.nFields()}/${j.nFields()} fields match`;
-  document.getElementById('view-holder').appendChild(table);
+  elem('view-holder').appendChild(table);
 }
 
 var j = new SecretStore({});
@@ -56,13 +56,13 @@ function foldInAndTally(j, j2) {
 
 async function decrypt() {
 
-  var em = EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText);
+  var em = EncryptedMessage.deserialize(elem('encrypted-message').innerText);
   var plaintext;
   try {
-    plaintext = await em.decrypt(document.getElementById('decryption-password').value);
+    plaintext = await em.decrypt(elem('decryption-password').value);
   } catch (err) {
     flasher.flash('pink', "Tried to decrypt the ciphertext in this HTML file, but password was incorrect.")
-    document.getElementById('decryption-password').focus();
+    elem('decryption-password').focus();
     throw err;
   }
   var decryptedJ = flasher.doOrFlashRed(
@@ -72,7 +72,7 @@ async function decrypt() {
   lastSavedJFingerprint = decryptedJ.fingerprint();
   var tally = foldInAndTally(j, decryptedJ);
   updateView();
-  document.getElementById('copy-field--account').focus();
+  elem('copy-field--account').focus();
   flasher.flash('lightgreen', `
     Decrypted the ciphertext embedded in this HTML file, and merged it into working memory.
     (${tally.added} fields added, ${tally.overwritten} modified, ${tally.agreedUpon} agreed-upon)
@@ -85,13 +85,13 @@ function copyFilteredPlaintext() {
   `);
 }
 async function save() {
-  var password = document.getElementById('encryption-password').value;
+  var password = elem('encryption-password').value;
   var shouldContinue = true;
 
-  var oldPassword = document.getElementById('decryption-password').value;
+  var oldPassword = elem('decryption-password').value;
   var oldJ;
   try {
-    oldJ = JSON.parse(await EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText).decrypt(password));
+    oldJ = JSON.parse(await EncryptedMessage.deserialize(elem('encrypted-message').innerText).decrypt(password));
   } catch (err) {
     if (err.name !== 'OperationError') {
       flasher.flash('pink', `
@@ -133,11 +133,11 @@ function onEnter(element, callback) {
 
 function importPlaintext() {
   var importedJ = flasher.doOrFlashRed(
-    () => SecretStore.parse(document.getElementById('import-plaintext-field').value),
+    () => SecretStore.parse(elem('import-plaintext-field').value),
     "Tried to merge the 'Import JSON' field into working memory, but the JSON was malformed."
   );
   var tally = foldInAndTally(j, importedJ);
-  document.getElementById('import-plaintext-field').value = '';
+  elem('import-plaintext-field').value = '';
   updateView();
   flasher.flash('lightgreen', `
     Merged the JSON from the 'Import JSON' field into working memory.
@@ -146,7 +146,7 @@ function importPlaintext() {
 }
 
 function setField() {
-  var [account, field, value] = ['account', 'field', 'value'].map(f => document.getElementById(`set-field--${f}`).value);
+  var [account, field, value] = ['account', 'field', 'value'].map(f => elem(`set-field--${f}`).value);
   var fieldExists = (j.get(account, field) !== undefined);
   var deleting = (value === '');
   if (deleting && !fieldExists) {
@@ -161,7 +161,7 @@ function setField() {
   flasher.flash('lightgreen', `
     ${deleting ? 'Deleted' : 'Set'} ${account}.${field}.
   `);
-  document.getElementById('set-field--value').value = '';
+  elem('set-field--value').value = '';
 }
 
 function failCatastrophically(reason) {
@@ -184,6 +184,14 @@ var checkCopyOrFail = (function() {
 })();
 CHECK_COPY_OR_FAIL_EVENT_TYPES.forEach(et => window.addEventListener(et, checkCopyOrFail));
 
+function elem(id) {
+  var result = document.getElementById(id);
+  if (result === undefined) {
+    throw `no element exists with id ${JSON.stringify(id)}`;
+  }
+  return result;
+}
+
 window.addEventListener('load', () => {
 
   var reasonForCatastrophicFailure = null;
@@ -196,7 +204,7 @@ window.addEventListener('load', () => {
     return;
   }
 
-  flasher = new Flasher(document.getElementById('status'));
+  flasher = new Flasher(elem('status'));
 
   Object.entries({'decrypt-button': decrypt,
                   'save-button': save,
@@ -204,7 +212,7 @@ window.addEventListener('load', () => {
                   'import-plaintext-button': importPlaintext,
                   'set-field-button': setField})
         .forEach(([id, clickCallback]) => {
-          document.getElementById(id).addEventListener('click', clickCallback);
+          elem(id).addEventListener('click', clickCallback);
         });
 
 
@@ -224,10 +232,10 @@ window.addEventListener('load', () => {
     }
   });
 
-  document.getElementById('decryption-password').focus();
+  elem('decryption-password').focus();
 
-  onEnter(document.getElementById('decryption-password'), () => {document.getElementById('decrypt-button').click();});
-  onEnter(document.getElementById('set-field--value'), () => {document.getElementById('set-field-button').click();})
+  onEnter(elem('decryption-password'), () => {elem('decrypt-button').click();});
+  onEnter(elem('set-field--value'), () => {elem('set-field-button').click();})
 
   window.onbeforeunload = () => {
     if (thereAreUnsavedChanges()) {
@@ -236,8 +244,12 @@ window.addEventListener('load', () => {
   }
 
   ['account', 'field'].forEach(f => {
-    var el = document.getElementById(`copy-field--${f}`);
-    onEnter(el, () => {document.getElementsByClassName('copy-button')[0].click(); el.focus()});
+    var el = elem(`copy-field--${f}`);
+    onEnter(el, () => {
+      document.getElementsByClassName('copy-button')[0].click();
+      elem('copy-field--field').value = '';
+      elem('copy-field--field').focus();
+    });
   });
   updateView();
 

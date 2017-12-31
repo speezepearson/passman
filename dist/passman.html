@@ -179,7 +179,7 @@ var flasher;
 
 function filteredJ() {
   var _map = ['account', 'field'].map(function (f) {
-    return (0, _query.parseQuery)(document.getElementById('copy-field--' + f).value);
+    return (0, _query.parseQuery)(elem('copy-field--' + f).value);
   }),
       _map2 = _slicedToArray(_map, 2),
       accountRE = _map2[0],
@@ -189,14 +189,14 @@ function filteredJ() {
 }
 
 function updateView() {
-  document.getElementById('view-holder').innerHTML = '';
+  elem('view-holder').innerHTML = '';
   var searchResults = filteredJ();
   var table = searchResults.buildView();
 
   var headerRow = (0, _html_utils.addNewChild)(table, 'tr', false);
   (0, _html_utils.addNewChild)(headerRow, 'th').innerText = searchResults.nAccounts() + '/' + j.nAccounts() + ' accounts match';
   (0, _html_utils.addNewChild)(headerRow, 'th').innerText = searchResults.nFields() + '/' + j.nFields() + ' fields match';
-  document.getElementById('view-holder').appendChild(table);
+  elem('view-holder').appendChild(table);
 }
 
 var j = new _secret_store.SecretStore({});
@@ -229,14 +229,14 @@ function foldInAndTally(j, j2) {
 function decrypt() {
   var em, plaintext, decryptedJ, tally;
   return Promise.resolve().then(function () {
-    em = _encrypted_message2.default.deserialize(document.getElementById('encrypted-message').innerText);
+    em = _encrypted_message2.default.deserialize(elem('encrypted-message').innerText);
     return Promise.resolve().then(function () {
-      return em.decrypt(document.getElementById('decryption-password').value);
+      return em.decrypt(elem('decryption-password').value);
     }).then(function (_resp) {
       plaintext = _resp;
     }).catch(function (err) {
       flasher.flash('pink', "Tried to decrypt the ciphertext in this HTML file, but password was incorrect.");
-      document.getElementById('decryption-password').focus();
+      elem('decryption-password').focus();
       throw err;
     });
   }).then(function () {
@@ -248,7 +248,7 @@ function decrypt() {
     tally = foldInAndTally(j, decryptedJ);
 
     updateView();
-    document.getElementById('copy-field--account').focus();
+    elem('copy-field--account').focus();
     flasher.flash('lightgreen', '\n    Decrypted the ciphertext embedded in this HTML file, and merged it into working memory.\n    (' + tally.added + ' fields added, ' + tally.overwritten + ' modified, ' + tally.agreedUpon + ' agreed-upon)\n  ');
   });
 }
@@ -259,11 +259,11 @@ function copyFilteredPlaintext() {
 function save() {
   var password, shouldContinue, oldPassword, oldJ, em;
   return Promise.resolve().then(function () {
-    password = document.getElementById('encryption-password').value;
+    password = elem('encryption-password').value;
     shouldContinue = true;
-    oldPassword = document.getElementById('decryption-password').value;
+    oldPassword = elem('decryption-password').value;
     return Promise.resolve().then(function () {
-      return _encrypted_message2.default.deserialize(document.getElementById('encrypted-message').innerText).decrypt(password);
+      return _encrypted_message2.default.deserialize(elem('encrypted-message').innerText).decrypt(password);
     }).then(function (_resp) {
       oldJ = JSON.parse(_resp);
     }).catch(function (err) {
@@ -308,17 +308,17 @@ function onEnter(element, callback) {
 
 function importPlaintext() {
   var importedJ = flasher.doOrFlashRed(function () {
-    return _secret_store.SecretStore.parse(document.getElementById('import-plaintext-field').value);
+    return _secret_store.SecretStore.parse(elem('import-plaintext-field').value);
   }, "Tried to merge the 'Import JSON' field into working memory, but the JSON was malformed.");
   var tally = foldInAndTally(j, importedJ);
-  document.getElementById('import-plaintext-field').value = '';
+  elem('import-plaintext-field').value = '';
   updateView();
   flasher.flash('lightgreen', '\n    Merged the JSON from the \'Import JSON\' field into working memory.\n    (' + tally.added + ' fields added, ' + tally.overwritten + ' modified, ' + tally.agreedUpon + ' agreed-upon)\n  ');
 }
 
 function setField() {
   var _map3 = ['account', 'field', 'value'].map(function (f) {
-    return document.getElementById('set-field--' + f).value;
+    return elem('set-field--' + f).value;
   }),
       _map4 = _slicedToArray(_map3, 3),
       account = _map4[0],
@@ -335,7 +335,7 @@ function setField() {
   j.set(account, field, value);
   updateView();
   flasher.flash('lightgreen', '\n    ' + (deleting ? 'Deleted' : 'Set') + ' ' + account + '.' + field + '.\n  ');
-  document.getElementById('set-field--value').value = '';
+  elem('set-field--value').value = '';
 }
 
 function failCatastrophically(reason) {
@@ -362,6 +362,14 @@ CHECK_COPY_OR_FAIL_EVENT_TYPES.forEach(function (et) {
   return window.addEventListener(et, checkCopyOrFail);
 });
 
+function elem(id) {
+  var result = document.getElementById(id);
+  if (result === undefined) {
+    throw 'no element exists with id ' + JSON.stringify(id);
+  }
+  return result;
+}
+
 window.addEventListener('load', function () {
 
   var reasonForCatastrophicFailure = null;
@@ -374,7 +382,7 @@ window.addEventListener('load', function () {
     return;
   }
 
-  flasher = new _flash.Flasher(document.getElementById('status'));
+  flasher = new _flash.Flasher(elem('status'));
 
   Object.entries({ 'decrypt-button': decrypt,
     'save-button': save,
@@ -385,7 +393,7 @@ window.addEventListener('load', function () {
         id = _ref4[0],
         clickCallback = _ref4[1];
 
-    document.getElementById(id).addEventListener('click', clickCallback);
+    elem(id).addEventListener('click', clickCallback);
   });
 
   window.addEventListener('input', function (e) {
@@ -402,13 +410,13 @@ window.addEventListener('load', function () {
     }
   });
 
-  document.getElementById('decryption-password').focus();
+  elem('decryption-password').focus();
 
-  onEnter(document.getElementById('decryption-password'), function () {
-    document.getElementById('decrypt-button').click();
+  onEnter(elem('decryption-password'), function () {
+    elem('decrypt-button').click();
   });
-  onEnter(document.getElementById('set-field--value'), function () {
-    document.getElementById('set-field-button').click();
+  onEnter(elem('set-field--value'), function () {
+    elem('set-field-button').click();
   });
 
   window.onbeforeunload = function () {
@@ -418,9 +426,11 @@ window.addEventListener('load', function () {
   };
 
   ['account', 'field'].forEach(function (f) {
-    var el = document.getElementById('copy-field--' + f);
+    var el = elem('copy-field--' + f);
     onEnter(el, function () {
-      document.getElementsByClassName('copy-button')[0].click();el.focus();
+      document.getElementsByClassName('copy-button')[0].click();
+      elem('copy-field--field').value = '';
+      elem('copy-field--field').focus();
     });
   });
   updateView();
