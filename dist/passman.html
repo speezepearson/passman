@@ -231,10 +231,11 @@ function decrypt() {
   return Promise.resolve().then(function () {
     em = _encrypted_message2.default.deserialize(document.getElementById('encrypted-message').innerText);
     return Promise.resolve().then(function () {
-      return flasher.awaitOrFlashRed(em.decrypt(document.getElementById('decryption-password').value), "Tried to decrypt the ciphertext in this HTML file, but password was incorrect.");
+      return em.decrypt(document.getElementById('decryption-password').value);
     }).then(function (_resp) {
       plaintext = _resp;
     }).catch(function (err) {
+      flasher.flash('pink', "Tried to decrypt the ciphertext in this HTML file, but password was incorrect.");
       document.getElementById('decryption-password').focus();
       throw err;
     });
@@ -733,24 +734,6 @@ var Flasher = function () {
         return f();
       } catch (err) {
         this.flash('pink', message + ('\n(error: ' + err + ')'), duration);
-        throw err;
-      }
-    }
-  }, {
-    key: 'awaitOrFlashRed',
-    value: function awaitOrFlashRed(p, message, catchFollowup) {
-      var duration,
-          _this2 = this,
-          _arguments = arguments;
-
-      duration = _arguments.length > 3 && _arguments[3] !== undefined ? _arguments[3] : 500;
-
-      try {
-        return p;
-      } catch (err) {
-        if (catchFollowup !== undefined) {
-          catchFollowup();
-        }_this2.flash('pink', message + ('\n(error: ' + err + ')'), duration);
         throw err;
       }
     }

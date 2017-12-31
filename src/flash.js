@@ -17,16 +17,6 @@ class Flasher {
       throw err;
     }
   }
-
-  async awaitOrFlashRed(p, message, catchFollowup, duration=500) {
-    try {
-      return await p;
-    } catch (err) {
-      if (catchFollowup !== undefined) catchFollowup();
-      this.flash('pink', message+`\n(error: ${err})`, duration);
-      throw err;
-    }
-  }
 }
 
 export { Flasher };

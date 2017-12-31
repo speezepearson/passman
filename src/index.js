@@ -59,11 +59,9 @@ async function decrypt() {
   var em = EncryptedMessage.deserialize(document.getElementById('encrypted-message').innerText);
   var plaintext;
   try {
-    plaintext = await flasher.awaitOrFlashRed(
-      em.decrypt(document.getElementById('decryption-password').value),
-      "Tried to decrypt the ciphertext in this HTML file, but password was incorrect."
-    );
+    plaintext = await em.decrypt(document.getElementById('decryption-password').value);
   } catch (err) {
+    flasher.flash('pink', "Tried to decrypt the ciphertext in this HTML file, but password was incorrect.")
     document.getElementById('decryption-password').focus();
     throw err;
   }
