@@ -5,6 +5,7 @@ globals.document = document;
 import { takeSnapshot, downloadThisPageWithNewEncryptedMessage } from './download.js';
 window.addEventListener('load', takeSnapshot);
 
+import { addNewChild } from './html_utils.js';
 import { SecretStore } from './secret_store.js';
 import { Flasher } from './flash.js';
 import copyToClipboard from './copy_to_clipboard.js';
@@ -15,10 +16,20 @@ var decryptedJ = null;
 
 var flasher;
 
-function updateView() {
+function filteredJ() {
   var [accountRE, fieldRE] = ['account', 'field'].map(f => parseQuery(document.getElementById(`copy-field--${f}`).value));
+  return j.filter(accountRE, fieldRE);
+}
+
+function updateView() {
   document.getElementById('view-holder').innerHTML = '';
-  document.getElementById('view-holder').appendChild(j.filter(accountRE, fieldRE).buildView());
+  var searchResults = filteredJ();
+  var table = searchResults.buildView();
+
+  var headerRow = addNewChild(table, 'tr', false);
+  addNewChild(headerRow, 'th').innerText = `${searchResults.nAccounts()}/${j.nAccounts()} accounts match`;
+  addNewChild(headerRow, 'th').innerText = `${searchResults.nFields()}/${j.nFields()} fields match`;
+  document.getElementById('view-holder').appendChild(table);
 }
 
 var j = new SecretStore({});
