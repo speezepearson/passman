@@ -80,10 +80,10 @@ async function decrypt() {
     (${tally.added} fields added, ${tally.overwritten} modified, ${tally.agreedUpon} agreed-upon)
   `);
 }
-function copyPlaintext() {
-  copyToClipboard(JSON.stringify(j.toJSONFriendlyObject(), null, 2));
+function copyFilteredPlaintext() {
+  copyToClipboard(JSON.stringify(filteredJ().toJSONFriendlyObject(), null, 2));
   flasher.flash('lightgreen', `
-    Copied entire working memory to clipboard, as JSON.
+    Copied search results from working memory to clipboard, as JSON.
   `);
 }
 async function save() {
@@ -202,7 +202,7 @@ window.addEventListener('load', () => {
 
   Object.entries({'decrypt-button': decrypt,
                   'save-button': save,
-                  'copy-plaintext-button': copyPlaintext,
+                  'copy-filtered-plaintext-button': copyFilteredPlaintext,
                   'import-plaintext-button': importPlaintext,
                   'set-field-button': setField})
         .forEach(([id, clickCallback]) => {

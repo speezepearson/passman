@@ -149,6 +149,8 @@ var _globals2 = _interopRequireDefault(_globals);
 
 var _download = __webpack_require__(2);
 
+var _html_utils = __webpack_require__(8);
+
 var _secret_store = __webpack_require__(3);
 
 var _flash = __webpack_require__(4);
@@ -175,7 +177,7 @@ var decryptedJ = null;
 
 var flasher;
 
-function updateView() {
+function filteredJ() {
   var _map = ['account', 'field'].map(function (f) {
     return (0, _query.parseQuery)(document.getElementById('copy-field--' + f).value);
   }),
@@ -183,8 +185,18 @@ function updateView() {
       accountRE = _map2[0],
       fieldRE = _map2[1];
 
+  return j.filter(accountRE, fieldRE);
+}
+
+function updateView() {
   document.getElementById('view-holder').innerHTML = '';
-  document.getElementById('view-holder').appendChild(j.filter(accountRE, fieldRE).buildView());
+  var searchResults = filteredJ();
+  var table = searchResults.buildView();
+
+  var headerRow = (0, _html_utils.addNewChild)(table, 'tr', false);
+  (0, _html_utils.addNewChild)(headerRow, 'th').innerText = searchResults.nAccounts() + '/' + j.nAccounts() + ' accounts match';
+  (0, _html_utils.addNewChild)(headerRow, 'th').innerText = searchResults.nFields() + '/' + j.nFields() + ' fields match';
+  document.getElementById('view-holder').appendChild(table);
 }
 
 var j = new _secret_store.SecretStore({});
@@ -239,9 +251,9 @@ function decrypt() {
     flasher.flash('lightgreen', '\n    Decrypted the ciphertext embedded in this HTML file, and merged it into working memory.\n    (' + tally.added + ' fields added, ' + tally.overwritten + ' modified, ' + tally.agreedUpon + ' agreed-upon)\n  ');
   });
 }
-function copyPlaintext() {
-  (0, _copy_to_clipboard2.default)(JSON.stringify(j.toJSONFriendlyObject(), null, 2));
-  flasher.flash('lightgreen', '\n    Copied entire working memory to clipboard, as JSON.\n  ');
+function copyFilteredPlaintext() {
+  (0, _copy_to_clipboard2.default)(JSON.stringify(filteredJ().toJSONFriendlyObject(), null, 2));
+  flasher.flash('lightgreen', '\n    Copied search results from working memory to clipboard, as JSON.\n  ');
 }
 function save() {
   var password, shouldContinue, oldPassword, oldJ, em;
@@ -365,7 +377,7 @@ window.addEventListener('load', function () {
 
   Object.entries({ 'decrypt-button': decrypt,
     'save-button': save,
-    'copy-plaintext-button': copyPlaintext,
+    'copy-filtered-plaintext-button': copyFilteredPlaintext,
     'import-plaintext-button': importPlaintext,
     'set-field-button': setField }).forEach(function (_ref3) {
     var _ref4 = _slicedToArray(_ref3, 2),
@@ -493,17 +505,14 @@ var _globals = __webpack_require__(0);
 
 var _globals2 = _interopRequireDefault(_globals);
 
+var _html_utils = __webpack_require__(8);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var globals = (0, _globals2.default)();
 
-function appendNewChild(parent, tagName) {
-  var result = globals.document.createElement(tagName);
-  parent.appendChild(result);
-  return result;
-}
 
 function validate(data) {
   if ((typeof data === 'undefined' ? 'undefined' : _typeof(data)) !== 'object') throw 'not an object';
@@ -641,27 +650,23 @@ var SecretStore = function () {
   }, {
     key: 'buildView',
     value: function buildView() {
-      var result = appendNewChild(globals.document.getElementById('view-holder'), 'table');
-
-      var headerRow = appendNewChild(result, 'tr');
-      appendNewChild(headerRow, 'th').innerText = this.nAccounts() + ' accounts match';
-      appendNewChild(headerRow, 'th').innerText = this.nFields() + ' fields match';
+      var result = globals.document.createElement('table');
 
       Object.entries(this.data).forEach(function (_ref17) {
         var _ref18 = _slicedToArray(_ref17, 2),
             account = _ref18[0],
             info = _ref18[1];
 
-        var tr = appendNewChild(result, 'tr');
-        appendNewChild(tr, 'td').innerText = account;
-        var dataCell = appendNewChild(tr, 'td');
+        var tr = (0, _html_utils.addNewChild)(result, 'tr');
+        (0, _html_utils.addNewChild)(tr, 'td').innerText = account;
+        var dataCell = (0, _html_utils.addNewChild)(tr, 'td');
         Object.keys(info).sort().forEach(function (field) {
-          var copyButton = appendNewChild(dataCell, 'button');
+          var copyButton = (0, _html_utils.addNewChild)(dataCell, 'button');
           copyButton.classList.add('copy-button');
           copyButton.setAttribute('data-account', account);
           copyButton.setAttribute('data-field', field);
           copyButton.innerText = field;
-          appendNewChild(dataCell, 'br');
+          (0, _html_utils.addNewChild)(dataCell, 'br');
         });
       });
       return result;
@@ -1030,6 +1035,36 @@ function parseQuery(q) {
 
 exports.parseQuery = parseQuery;
 
+/***/ }),
+/* 8 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.addNewChild = undefined;
+
+var _globals = __webpack_require__(0);
+
+var _globals2 = _interopRequireDefault(_globals);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var globals = (0, _globals2.default)();
+
+function addNewChild(parent, tagName) {
+  var append = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+
+  var result = globals.document.createElement(tagName);
+  if (append) parent.appendChild(result);else parent.prepend(result);
+  return result;
+}
+
+exports.addNewChild = addNewChild;
+
 /***/ })
 /******/ ]);</script></head>
 <body>
@@ -1056,25 +1091,19 @@ exports.parseQuery = parseQuery;
     </td>
 
     <td rowspan="2" style="padding: 1em; border: 5px solid black; height: 100%; width: 60%">
-      <strong>Query Working Memory</strong>
-      <ul class="spacey">
-        <li>
-          <button id="copy-plaintext-button" class="unlocked-only">Copy Working Memory To Clipboard As JSON</button>
-        </li>
-        <li class="">
-          Filter working memory: <br />
-          <input type="text" class="query-field" id="copy-field--account" placeholder="account" /><input type="text" class="query-field" id="copy-field--field" placeholder="field" />
+      <p><strong>Query Working Memory</strong></p>
+      Filter working memory: <br />
+      <input type="text" class="query-field" id="copy-field--account" placeholder="account" /><input type="text" class="query-field" id="copy-field--field" placeholder="field" />
 
-          <ul>
-            <li>(queries must match beginnings of account/field names)</li>
-            <li>(Space means "1 or more characters", so e.g. "a z" would match "amazon")</li>
-            <li>(hit Enter to copy first match)</li>
-          </ul>
-
-          <div id="view-holder"></div>
-
-        </li>
+      <ul>
+        <li>(queries must match beginnings of account/field names)</li>
+        <li>(Space means "1 or more characters", so e.g. "a z" would match "amazon")</li>
+        <li>(hit Enter to copy first match)</li>
       </ul>
+
+      <button id="copy-filtered-plaintext-button">Copy Matches As JSON</button>
+      <div id="view-holder"></div>
+
     </td>
 
   </tr>

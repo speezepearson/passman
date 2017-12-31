@@ -78,25 +78,19 @@
     </td>
 
     <td rowspan="2" style="padding: 1em; border: 5px solid black; height: 100%; width: 60%">
-      <strong>Query Working Memory</strong>
-      <ul class="spacey">
-        <li>
-          <button id="copy-plaintext-button" class="unlocked-only">Copy Working Memory To Clipboard As JSON</button>
-        </li>
-        <li class="">
-          Filter working memory: <br />
-          <input type="text" class="query-field" id="copy-field--account" placeholder="account" /><input type="text" class="query-field" id="copy-field--field" placeholder="field" />
+      <p><strong>Query Working Memory</strong></p>
+      Filter working memory: <br />
+      <input type="text" class="query-field" id="copy-field--account" placeholder="account" /><input type="text" class="query-field" id="copy-field--field" placeholder="field" />
 
-          <ul>
-            <li>(queries must match beginnings of account/field names)</li>
-            <li>(Space means "1 or more characters", so e.g. "a z" would match "amazon")</li>
-            <li>(hit Enter to copy first match)</li>
-          </ul>
-
-          <div id="view-holder"></div>
-
-        </li>
+      <ul>
+        <li>(queries must match beginnings of account/field names)</li>
+        <li>(Space means "1 or more characters", so e.g. "a z" would match "amazon")</li>
+        <li>(hit Enter to copy first match)</li>
       </ul>
+
+      <button id="copy-filtered-plaintext-button">Copy Matches As JSON</button>
+      <div id="view-holder"></div>
+
     </td>
 
   </tr>
