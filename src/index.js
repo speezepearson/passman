@@ -246,6 +246,11 @@ window.addEventListener('load', () => {
   ['account', 'field'].forEach(f => {
     var el = elem(`copy-field--${f}`);
     onEnter(el, () => {
+      var topCopyButton = document.getElementsByClassName('copy-button')[0];
+      if (topCopyButton === undefined) {
+        flasher.flash('pink', "Tried to copy top search result, but there are none.");
+        return;
+      }
       document.getElementsByClassName('copy-button')[0].click();
       elem('copy-field--field').value = '';
       elem('copy-field--field').focus();
