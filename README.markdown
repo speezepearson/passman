@@ -49,37 +49,37 @@ Here is a typical session I have with this file:
 
 1. Open the file in my browser.
 
-    ![screenshot](TODO)
+    ![screenshot](https://github.com/speezepearson/passman/raw/master/readme-images/1.png)
 
 2. Type in my decryption key, and hit Enter.
 
-    ![screenshot](TODO)
+    ![screenshot](https://github.com/speezepearson/passman/raw/master/readme-images/2.png)
 
 3. Go about my life.
 
 4. I need to log into Facebook. I type in queries to specify my "password" for "facebook", and hit Enter.
 
-    ![screenshot](TODO)
+    ![screenshot](https://github.com/speezepearson/passman/raw/master/readme-images/3.png)
 
 5. I successfully log into Facebook. Heartened by my success, I decide to add my Expedia account to my password manager: I go the the "Modify Working Memory" pane, specify that I want to set "expedia"'s "username" to something, and hit Enter:
 
-    ![screenshot](TODO)
+    ![screenshot](https://github.com/speezepearson/passman/raw/master/readme-images/4.png)
 
     I do the same for my Expedia password.
 
-6. I close the page-- oops--
+6. Eventually, I close the page-- oops--
 
-    ![screenshot](TODO)
+    ![screenshot](https://github.com/speezepearson/passman/raw/master/readme-images/5.png)
 
     That's right! I haven't saved my Expedia password. I hit "Stay on Page".
 
 7. I type in my password to encrypt the file-- oops--
 
-    ![screenshot](TODO)
+    ![screenshot](https://github.com/speezepearson/passman/raw/master/readme-images/6.png)
 
     I must've typoed my password. I type it again:
 
-    ![screenshot](TODO)
+    ![screenshot](https://github.com/speezepearson/passman/raw/master/readme-images/7.png)
 
 8. Before I forget -- I hate this step, but I don't yet know a way around it -- I move the _newly downloaded_ password file to replace the old one, so that when I open it next time, I'll be sure to open the version that contains my Expedia password.
 
