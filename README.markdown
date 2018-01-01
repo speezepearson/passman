@@ -88,7 +88,7 @@ Here is a typical session I have with this file:
 
 ## I can't recover my passwords!
 
-Don't worry! If the Passman page somehow stops working for you, you can use [this Python script](https://github.com/speezepearson/passman/blob/master/recover.py) to recover your passwords: in a terminal, just run `pip install cryptodomex &amp;&amp; python recover.py html < /path/to/passman.html`.
+Don't worry! If the Passman page somehow stops working for you, you can use [this Python script](https://github.com/speezepearson/passman/blob/master/recover.py) to recover your passwords: in a terminal, just run `pip install cryptodomex bs4 &amp;&amp; python recover.py html < /path/to/passman.html`.
 
 If even _that_ doesn't work for whatever reason, you'll have to roll up your sleeves and code a little. What you need to know:
 

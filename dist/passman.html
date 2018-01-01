@@ -1329,7 +1329,7 @@ exports.shuffle = shuffle;
   <li><p><em>Now</em> I close the page.</p></li>
   </ol>
   <h2 id="i-cant-recover-my-passwords">I can't recover my passwords!</h2>
-  <p>Don't worry! If the Passman page somehow stops working for you, you can use <a href="https://github.com/speezepearson/passman/blob/master/recover.py">this Python script</a> to recover your passwords: in a terminal, just run <code>pip install cryptodomex &amp;amp;&amp;amp; python recover.py html &lt; /path/to/passman.html</code>.</p>
+  <p>Don't worry! If the Passman page somehow stops working for you, you can use <a href="https://github.com/speezepearson/passman/blob/master/recover.py">this Python script</a> to recover your passwords: in a terminal, just run <code>pip install cryptodomex bs4 &amp;amp;&amp;amp; python recover.py html &lt; /path/to/passman.html</code>.</p>
   <p>If even <em>that</em> doesn't work for whatever reason, you'll have to roll up your sleeves and code a little. What you need to know:</p>
   <ul>
   <li>There's a JSON object inside the HTML element with <code>id=&quot;encrypted-message&quot;</code>. It specifies a <code>keyDerivationAlgorithm</code>, an <code>encryptionAlgorithm</code>, and some <code>ciphertext</code>. All the arrays of numbers from 0 to 255 represent bytestrings.</li>
