@@ -257,6 +257,7 @@ window.addEventListener('load', () => {
   elem('decryption-password').focus();
 
   onEnter(elem('decryption-password'), () => {elem('decrypt-button').click();});
+  onEnter(elem('encryption-password'), () => {elem('save-button').click();});
   onEnter(elem('set-field--value'), () => {elem('set-field-button').click();})
 
   window.onbeforeunload = () => {

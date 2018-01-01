@@ -450,6 +450,9 @@ window.addEventListener('load', function () {
   onEnter(elem('decryption-password'), function () {
     elem('decrypt-button').click();
   });
+  onEnter(elem('encryption-password'), function () {
+    elem('save-button').click();
+  });
   onEnter(elem('set-field--value'), function () {
     elem('set-field-button').click();
   });
