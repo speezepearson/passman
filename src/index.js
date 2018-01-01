@@ -284,6 +284,7 @@ window.addEventListener('load', () => {
       }
       document.getElementsByClassName('copy-button')[0].click();
       elem('copy-field--field').value = '';
+      updateView();
       elem('copy-field--field').focus();
     });
   });
