@@ -17,7 +17,7 @@ def recover(password, j):
     'sha256',
     hashlib.sha256(password.encode('utf8')).digest(),
     salt=bytes(j['keyDerivationAlgorithm']['salt']),
-    iterations=100000)
+    iterations=j['keyDerivationAlgorithm']['iterations'])
   iv = bytes(j['encryptionAlgorithm']['iv'])
   ciphertext_and_tag = bytes(j['ciphertext'])
   ciphertext, tag = ciphertext_and_tag[:-16], ciphertext_and_tag[-16:]
