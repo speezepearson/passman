@@ -5,6 +5,7 @@ globals.document = document;
 import { takeSnapshot, downloadThisPageWithNewEncryptedMessage } from './download.js';
 window.addEventListener('load', takeSnapshot);
 
+import { choose, shuffle } from './rand.js';
 import { addNewChild } from './html_utils.js';
 import { SecretStore } from './secret_store.js';
 import { Flasher } from './flash.js';
@@ -157,11 +158,31 @@ function setField() {
   }
 
   j.set(account, field, value);
+  elem('copy-field--account').value = account;
+  elem('copy-field--field').value = '';
   updateView();
   flasher.flash('lightgreen', `
     ${deleting ? 'Deleted' : 'Set'} ${account}.${field}.
   `);
   elem('set-field--value').value = '';
+}
+
+function generateField() {
+  var [account, field, length, charsets] = ['account', 'field', 'length', 'charsets'].map(f => elem(`generate-field--${f}`).value);
+  length = parseInt(length);
+  charsets = charsets.split(',').map(s => s.trim()).filter(s => (s.length>0));
+  var value = '';
+  var i;
+  for (i=0; i<charsets.length; i++) {
+    value += choose(charsets[i]);
+  }
+  var charset = charsets.join('');
+  for (; i<length; i++) {
+    value += choose(charset);
+  }
+  value = shuffle(Array.from(value)).join('')
+  j.set(account, field, value);
+  updateView();
 }
 
 function failCatastrophically(reason) {
@@ -210,6 +231,7 @@ window.addEventListener('load', () => {
                   'save-button': save,
                   'copy-filtered-plaintext-button': copyFilteredPlaintext,
                   'import-plaintext-button': importPlaintext,
+                  'generate-field-button': generateField,
                   'set-field-button': setField})
         .forEach(([id, clickCallback]) => {
           elem(id).addEventListener('click', clickCallback);

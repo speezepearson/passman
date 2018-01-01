@@ -149,6 +149,8 @@ var _globals2 = _interopRequireDefault(_globals);
 
 var _download = __webpack_require__(2);
 
+var _rand = __webpack_require__(9);
+
 var _html_utils = __webpack_require__(8);
 
 var _secret_store = __webpack_require__(3);
@@ -333,9 +335,41 @@ function setField() {
   }
 
   j.set(account, field, value);
+  elem('copy-field--account').value = account;
+  elem('copy-field--field').value = '';
   updateView();
   flasher.flash('lightgreen', '\n    ' + (deleting ? 'Deleted' : 'Set') + ' ' + account + '.' + field + '.\n  ');
   elem('set-field--value').value = '';
+}
+
+function generateField() {
+  var _map5 = ['account', 'field', 'length', 'charsets'].map(function (f) {
+    return elem('generate-field--' + f).value;
+  }),
+      _map6 = _slicedToArray(_map5, 4),
+      account = _map6[0],
+      field = _map6[1],
+      length = _map6[2],
+      charsets = _map6[3];
+
+  length = parseInt(length);
+  charsets = charsets.split(',').map(function (s) {
+    return s.trim();
+  }).filter(function (s) {
+    return s.length > 0;
+  });
+  var value = '';
+  var i;
+  for (i = 0; i < charsets.length; i++) {
+    value += (0, _rand.choose)(charsets[i]);
+  }
+  var charset = charsets.join('');
+  for (; i < length; i++) {
+    value += (0, _rand.choose)(charset);
+  }
+  value = (0, _rand.shuffle)(Array.from(value)).join('');
+  j.set(account, field, value);
+  updateView();
 }
 
 function failCatastrophically(reason) {
@@ -388,6 +422,7 @@ window.addEventListener('load', function () {
     'save-button': save,
     'copy-filtered-plaintext-button': copyFilteredPlaintext,
     'import-plaintext-button': importPlaintext,
+    'generate-field-button': generateField,
     'set-field-button': setField }).forEach(function (_ref3) {
     var _ref4 = _slicedToArray(_ref3, 2),
         id = _ref4[0],
@@ -1063,6 +1098,73 @@ function addNewChild(parent, tagName) {
 
 exports.addNewChild = addNewChild;
 
+/***/ }),
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.shuffle = exports.choose = exports.randInts = exports.randInt = undefined;
+
+var _globals = __webpack_require__(0);
+
+var _globals2 = _interopRequireDefault(_globals);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var globals = (0, _globals2.default)();
+
+function randInt(upperBoundExclusive) {
+  // If we can generate a random digit 0-9,
+  // and we want a random digit 0-2,
+  // then we can just generate digits and map
+  //   0123456789
+  //   012012012_
+  // where we resample if we get 9.
+  // The problem with 9 is that
+  var greatestMultipleOfUpperBoundNotOver65536 = 65536 - 65536 % upperBoundExclusive;
+  var result;
+  do {
+    result = globals.window.crypto.getRandomValues(new Uint16Array(1))[0];
+  } while (result >= greatestMultipleOfUpperBoundNotOver65536);
+  if (result === undefined) debugger;
+  return result % upperBoundExclusive;
+}
+
+function randInts(nInts, upperBoundExclusive) {
+  var result = new Array(nInts);
+  result.forEach(function (_, i) {
+    result[i] = randInt(upperBoundExclusive);
+  });
+  return result;
+}
+
+function choose(choices) {
+  var r = randInt(choices.length);
+  if (r === undefined || r < 0 || r >= choices.length) debugger;
+  return choices[r];
+}
+
+function shuffle(xs) {
+  // source: https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#The_modern_algorithm
+  for (var i = 0; i < xs.length - 1; i++) {
+    var j = i + randInt(xs.length - i);
+    var _ref = [xs[j], xs[i]];
+    xs[i] = _ref[0];
+    xs[j] = _ref[1];
+  }
+  return xs;
+}
+
+exports.randInt = randInt;
+exports.randInts = randInts;
+exports.choose = choose;
+exports.shuffle = shuffle;
+
 /***/ })
 /******/ ]);</script></head>
 <body>
@@ -1116,6 +1218,13 @@ exports.addNewChild = addNewChild;
           to
           <input type="password" id="set-field--value" placeholder="new value" />
           (leave empty to delete)
+        </li>
+        <li>
+          <button id="generate-field-button">Generate Random Value</button> for<br />
+          <input type="text" id="generate-field--account" placeholder="account" /><input type="text" class="query-field" id="generate-field--field" placeholder="field" /><br />
+          of length <input type="number" id="generate-field--length" placeholder="length" value="15" /><br />
+          including at least one from each of these charsets:<br />
+          <input type="text" id="generate-field--charsets" placeholder="comma-separated charsets" value="abcdefghijklmnopqrstuvwxyz, ABCDEFGHIJKLMNOPQRSTUVWXYZ, 0123456789, !" />
         </li>
         <li class="">
           <button id="import-plaintext-button">Import JSON</button> by pasting it here:
