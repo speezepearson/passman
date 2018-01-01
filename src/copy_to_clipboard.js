@@ -1,10 +1,8 @@
-import _getGlobals from './globals.js'; var globals = _getGlobals();
-
 function copyToClipboard(text) {
   // adapted from: https://stackoverflow.com/a/30810322
 
   var oldFocusElement = document.activeElement;
-  var textArea = globals.document.createElement("textarea");
+  var textArea = document.createElement("textarea");
 
   //
   // *** This styling is an extra step which is likely not required. ***
@@ -45,14 +43,14 @@ function copyToClipboard(text) {
 
   textArea.value = text;
 
-  globals.document.body.appendChild(textArea);
+  document.body.appendChild(textArea);
 
   textArea.select();
 
-  var successful = globals.document.execCommand('copy');
+  var successful = document.execCommand('copy');
   if (!successful) throw 'Copying failed for some reason!'
 
-  globals.document.body.removeChild(textArea);
+  document.body.removeChild(textArea);
 
   oldFocusElement.focus();
 }

@@ -1,4 +1,3 @@
-import _getGlobals from './globals.js'; var globals = _getGlobals();
 import { addNewChild } from './html_utils.js';
 
 function validate(data) {
@@ -85,7 +84,7 @@ class SecretStore {
   }
 
   buildView() {
-    var result = globals.document.createElement('table');
+    var result = document.createElement('table');
 
     Object.entries(this.data).forEach(([account, info]) => {
       var tr = addNewChild(result, 'tr');

@@ -1,5 +1,3 @@
-import _getGlobals from './globals.js'; var globals = _getGlobals();
-
 function randInt(upperBoundExclusive) {
   // If we can generate a random digit 0-9,
   // and we want a random digit 0-2,
@@ -11,7 +9,7 @@ function randInt(upperBoundExclusive) {
   var greatestMultipleOfUpperBoundNotOver65536 = 65536 - (65536%upperBoundExclusive);
   var result;
   do {
-    result = globals.window.crypto.getRandomValues(new Uint16Array(1))[0];
+    result = window.crypto.getRandomValues(new Uint16Array(1))[0];
   } while (result >= greatestMultipleOfUpperBoundNotOver65536);
   if (result===undefined) debugger;
   return result % upperBoundExclusive;
