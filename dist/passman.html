@@ -6,13 +6,6 @@
       width: 10em;
     }
 
-    .good {
-      outline: 1px solid lightgreen;
-    }
-    .bad {
-      outline: 1px solid red;
-    }
-
     input[type=text], input[type=password] {
       max-width: 10em;
     }
@@ -31,24 +24,6 @@
 
     img {
       max-width: 100%;
-    }
-
-    #bulk-operations {
-      padding: 1em;
-      border-right: 1px solid black;
-      margin-right: 1em;
-      max-width: 20em;
-    }
-
-    .column-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .row-container {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
     }
 
     ul.spacey > li {
@@ -498,9 +473,7 @@ window.addEventListener('load', function () {
 
   // Hack to make the page load faster; the window's "load" event doesn't fire before the images load, which can take a while.
   Array.from(document.getElementsByTagName('img')).forEach(function (img) {
-    console.log('considering', img);
     if (img.src === '') {
-      console.log('fixing', img);
       img.src = img.getAttribute('data-src');
     }
   });
