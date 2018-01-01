@@ -35,7 +35,7 @@ You have many accounts, and many secrets for each account. This password manager
     }
 ```
 
-It's _a little bad_ if bad guys get ahold of the account/field names (e.g. `github` or `username`); it's __disastrous__ if they get ahold of the values (e.g. `pw-for-amazon`). This password manager is designed to _somewhat_ protect the account/field names (they're stored encrypted on disk, but still displayed on the screen), and __energetically__ encrypt the field values ("secrets") (they are encrypted on disk, _never_ displayed on the screen, and they only _ever_ leave the JavaScript interpreter's memory in plaintext by being copied to the clipboard when you ask for them to be).
+It's _a little bad_ if bad guys get ahold of the account/field names (e.g. `github` or `username`); it's __disastrous__ if they get ahold of the values (e.g. `pw-for-amazon`). This password manager is designed to _somewhat_ protect the account/field names (they're stored encrypted on disk, but still displayed on the screen), and __energetically__ protect the field values ("secrets") (they are encrypted on disk, _never_ displayed on the screen, and they only _ever_ leave the JavaScript interpreter's memory in plaintext by being copied to the clipboard when you ask for them to be).
 
 At any given time, this password manager has one of these two-level objects, in plaintext, stored in "working memory." This is the object that you query and modify. It starts out empty; you can add/modify values, and "save" it by embedding an encrypted copy in a _copy_ of the Passman file (remember, JavaScript can't just write to disk; it can only download new files).
 
@@ -88,7 +88,7 @@ Here is a typical session I have with this file:
 
 ## I can't recover my passwords!
 
-Don't worry! If the Passman page somehow stops working for you, you can use [this Python script](https://github.com/speezepearson/passman/blob/master/recover.py) to recover your passwords: in a terminal, just run `pip install cryptodomex bs4 &amp;&amp; python recover.py html < /path/to/passman.html`.
+Don't worry! If the Passman page somehow stops working for you, you can use [this Python script](https://github.com/speezepearson/passman/blob/master/recover.py) to recover your passwords: in a terminal, just run `pip install cryptodomex bs4 && python recover.py html < /path/to/passman.html`.
 
 If even _that_ doesn't work for whatever reason, you'll have to roll up your sleeves and code a little. What you need to know:
 
