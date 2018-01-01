@@ -1,3 +1,5 @@
+import _whatever from './polyfills.js';
+
 import _getGlobals from './globals.js'; var globals = _getGlobals();
 globals.window = window;
 globals.document = document;
