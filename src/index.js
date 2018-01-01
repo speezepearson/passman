@@ -188,8 +188,11 @@ function generateField() {
   }
   value = shuffle(Array.from(value)).join('')
   j.set(account, field, value);
+  copyToClipboard(value);
+  elem('copy-field--account').value = account;
+  elem('copy-field--field').value = '';
   updateView();
-  flasher.flash('lightgreen', `Set ${account}.${field}.`);
+  flasher.flash('lightgreen', `Generated a ${value.length}-character-long random value for ${account}.${field}, and copied it to the clipboard.`);
 }
 
 function failCatastrophically(reason) {

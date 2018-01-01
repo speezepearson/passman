@@ -375,8 +375,11 @@ function generateField() {
   }
   value = (0, _rand.shuffle)(Array.from(value)).join('');
   j.set(account, field, value);
+  (0, _copy_to_clipboard2.default)(value);
+  elem('copy-field--account').value = account;
+  elem('copy-field--field').value = '';
   updateView();
-  flasher.flash('lightgreen', 'Set ' + account + '.' + field + '.');
+  flasher.flash('lightgreen', 'Generated a ' + value.length + '-character-long random value for ' + account + '.' + field + ', and copied it to the clipboard.');
 }
 
 function failCatastrophically(reason) {
@@ -484,6 +487,15 @@ window.addEventListener('load', function () {
     });
   });
   updateView();
+
+  // Hack to make the page load faster; the window's "load" event doesn't fire before the images load, which can take a while.
+  Array.from(document.getElementsByTagName('img')).forEach(function (img) {
+    console.log('considering', img);
+    if (img.src === '') {
+      console.log('fixing', img);
+      img.src = img.getAttribute('data-src');
+    }
+  });
 });
 
 window.addEventListener('keypress', function (e) {
@@ -1230,7 +1242,7 @@ exports.shuffle = shuffle;
           (leave empty to delete)
         </li>
         <li>
-          <button id="generate-field-button">Generate Random Value</button> for<br />
+          <button id="generate-field-button">Generate And Copy Random Value</button> for<br />
           <input type="text" id="generate-field--account" placeholder="account" /><input type="text" class="query-field" id="generate-field--field" placeholder="field" /><br />
           of length <input type="number" id="generate-field--length" placeholder="length" value="15" /><br />
           including at least one character from each of these charsets:<br />
