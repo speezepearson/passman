@@ -171,6 +171,12 @@ function generateField() {
   var [account, field, length, charsets] = ['account', 'field', 'length', 'charsets'].map(f => elem(`generate-field--${f}`).value);
   length = parseInt(length);
   charsets = charsets.split(',').map(s => s.trim()).filter(s => (s.length>0));
+
+  if (length < charsets.length) {
+    flasher.flash('pink', `Tried to set ${account}.${field} to a random value, but you asked for that value to have ${length} characters drawn from ${charsets.length} character sets. This is impossible.`);
+    return;
+  }
+
   var value = '';
   var i;
   for (i=0; i<charsets.length; i++) {
@@ -183,6 +189,7 @@ function generateField() {
   value = shuffle(Array.from(value)).join('')
   j.set(account, field, value);
   updateView();
+  flasher.flash('lightgreen', `Set ${account}.${field}.`);
 }
 
 function failCatastrophically(reason) {
