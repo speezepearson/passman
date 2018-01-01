@@ -291,6 +291,14 @@ window.addEventListener('load', () => {
   });
   updateView();
 
+  // Hack to make the page load faster; the window's "load" event doesn't fire before the images load, which can take a while.
+  Array.from(document.getElementsByTagName('img')).forEach(img => {
+    console.log('considering', img);
+    if (img.src === '') {
+      console.log('fixing', img);
+      img.src = img.getAttribute('data-src');
+    }
+  })
 
 });
 
