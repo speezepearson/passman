@@ -1,14 +1,16 @@
+# Passman
+
 This password manager is a standalone HTML file that contains some encrypted data, as well as tools for querying it, manipulating it, and saving the manipulated data.
 
 This approach has some pluses and minuses. On the plus side:
 
-- It's super-portable; on any computer with a modern browser, this will work out of the box, without installing anything or using any tools you're unfamiliar with, or depending on any other files at all. (Contrast with: GPG.)
-- It's super-simple. Your passwords are stored as a simple JSON object, serialized and encrypted with a standard, widely-supported stream cipher (specifically, AES-256 in GCM mode, the key computed by PBKDF2-ing the SHA-256 of your master password). You can trivially export all your data as JSON; and if this page "just stops working" somehow, you can easily recover your data using a text editor and a Python script (see "I can't recover my passwords!" below). (Contrast with: everything that's not GPG.)
+- It's super-portable; in any modern browser, this will work out of the box, without installing anything or using any tools you're unfamiliar with, or depending on any other files at all. (Contrast with: GPG.)
+- It's super-simple. Your passwords are stored as a simple JSON object, serialized and encrypted with a standard, widely-supported stream cipher (specifically, AES-256 in GCM mode, the key computed by PBKDF2-ing the SHA-256 of your master password). You can trivially export all your data as JSON; and if this page "just stops working" somehow, you can easily recover your data using a text editor and a Python script (see [I can't recover my passwords!](#i-cant-recover-my-passwords) below). (Contrast with: everything that's not GPG.)
 
 And on the minus side:
 
 - It's kinda ugly, as you see. Good UIs require require big ol' libraries and lots of elbow grease; I prefer minimalism.
-- You can't "save a file," per se, only download a copy of this file with the new passwords embedded (encrypted) in it. This is an unavoidable consequence of JavaScript sandboxing, and it makes version control kinda a hassle.
+- Saving new passwords is a little wonky, since JavaScript is sandboxed so it can't save files. The best you can do is download a _new_ file, identical except for the encrypted content.
 
 
 ## Conceptual Model

@@ -47,7 +47,7 @@
 
 <div id="status">
   Enter decryption password in top-left to decrypt the passwords in this file. <br />
-  Or, read the <a href="#tutorial" onclick="['help', 'tutorial'].forEach(id => {document.getElementById(id).open = true})">tutorial</a>.
+  Or, read the <a href="#help" onclick="document.getElementById('help').open = true">tutorial</a>.
 </div>
 
 <table>
@@ -121,13 +121,13 @@
   <p>This password manager is a standalone HTML file that contains some encrypted data, as well as tools for querying it, manipulating it, and saving the manipulated data.</p>
   <p>This approach has some pluses and minuses. On the plus side:</p>
   <ul>
-  <li>It's super-portable; on any computer with a modern browser, this will work out of the box, without installing anything or using any tools you're unfamiliar with, or depending on any other files at all. (Contrast with: GPG.)</li>
-  <li>It's super-simple. Your passwords are stored as a simple JSON object, serialized and encrypted with a standard, widely-supported stream cipher (specifically, AES-256 in GCM mode, the key computed by PBKDF2-ing the SHA-256 of your master password). You can trivially export all your data as JSON; and if this page &quot;just stops working&quot; somehow, you can easily recover your data using a text editor and a Python script (see &quot;I can't recover my passwords!&quot; below). (Contrast with: everything that's not GPG.)</li>
+  <li>It's super-portable; in any modern browser, this will work out of the box, without installing anything or using any tools you're unfamiliar with, or depending on any other files at all. (Contrast with: GPG.)</li>
+  <li>It's super-simple. Your passwords are stored as a simple JSON object, serialized and encrypted with a standard, widely-supported stream cipher (specifically, AES-256 in GCM mode, the key computed by PBKDF2-ing the SHA-256 of your master password). You can trivially export all your data as JSON; and if this page &quot;just stops working&quot; somehow, you can easily recover your data using a text editor and a Python script (see <a href="#i-cant-recover-my-passwords">I can't recover my passwords!</a> below). (Contrast with: everything that's not GPG.)</li>
   </ul>
   <p>And on the minus side:</p>
   <ul>
   <li>It's kinda ugly, as you see. Good UIs require require big ol' libraries and lots of elbow grease; I prefer minimalism.</li>
-  <li>You can't &quot;save a file,&quot; per se, only download a copy of this file with the new passwords embedded (encrypted) in it. This is an unavoidable consequence of JavaScript sandboxing, and it makes version control kinda a hassle.</li>
+  <li>Saving new passwords is a little wonky, since JavaScript is sandboxed so it can't save files. The best you can do is download a <em>new</em> file, identical except for the encrypted content.</li>
   </ul>
   <h2 id="conceptual-model">Conceptual Model</h2>
   <p>You have many accounts, and many secrets for each account. This password manager stores this as a two-level JSON object, like</p>
