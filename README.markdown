@@ -11,6 +11,7 @@ And on the minus side:
 
 - It's kinda ugly, as you see. Good UIs require require big ol' libraries and lots of elbow grease; I prefer minimalism.
 - Saving new passwords is a little wonky, since JavaScript is sandboxed so it can't save files. The best you can do is download a _new_ file, identical except for the encrypted content.
+- This is a password manager written by one guy, over a couple of weeks, served to you from a web site he doesn't even control. __Using this system yourself seems real foolhardy to me.__
 
 
 ## Conceptual Model
