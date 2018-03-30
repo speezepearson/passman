@@ -193,6 +193,59 @@ function generateField() {
   flasher.flash('lightgreen', `Generated a ${value.length}-character-long random value for ${account}.${field}, and copied it to the clipboard.`);
 }
 
+async function importCiphertext() {
+  var file = elem('import-ciphertext-file').files[0];
+  if (file === undefined) {
+    flasher.flash('pink', `
+      Tried to merge the ciphertext from another Passman file into working memory,
+      but no file was selected.
+    `);
+    return;
+  }
+  var html = await new Promise((resolve, reject) => {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        resolve(e.target.result);
+      } catch (err) {
+        $this.fileInput.value = [];
+        reject(err);
+      }
+    }
+    reader.readAsText(file);
+  });
+  var doc = flasher.doOrFlashRed(
+    () => new DOMParser().parseFromString(html, 'text/html'),
+    "Tried to merge the ciphertext from another Passman file into working memory, but selected file couldn't be parsed as HTML."
+  );
+  var text = flasher.doOrFlashRed(
+    () => doc.getElementById('encrypted-message').innerText,
+    "Tried to merge the ciphertext from another Passman file into working memory, but there was no element with id='encrypted-message'."
+  );
+  var em = flasher.doOrFlashRed(
+    () => EncryptedMessage.deserialize(text),
+    "Tried to merge the ciphertext from another Passman file into working memory, but couldn't parse the ciphertext from it (this is extra weird -- maybe I made a non-backwards-compatible change to the encrypted-message format?)."
+  );
+  var importedPlaintext = await flasher.doOrFlashRed(
+    async function() {return await em.decrypt(elem('import-ciphertext-password').value);},
+    "Tried to merge the ciphertext from another Passman file into working memory, but password was wrong to decrypt the other file's ciphertext."
+  );
+  var importedJ = flasher.doOrFlashRed(
+    () => JSON.parse(importedPlaintext),
+    "Tried to merge the ciphertext from another Passman file into working memory, but failed to parse the JSON. (This is REALLY WEIRD.)"
+  );
+
+  flasher.doOrFlashRed(
+    () => j.foldIn(new SecretStore(importedJ)),
+    "Tried to merge the ciphertext from another Passman file into working memory, but the decrypted JSON object from the other file doesn't have the expected shape. (This is REALLY WEIRD.)"
+  );
+  updateView();
+  flasher.flash('lightgreen', `
+    Merged the ciphertext from another Passman file into working memory.
+  `);
+}
+
+
 function failCatastrophically(reason) {
   document.body.innerText = `THIS WON'T WORK FOR YOU. ${reason}`;
   throw 'failed catastrophically';
@@ -240,7 +293,9 @@ window.addEventListener('load', () => {
                   'copy-filtered-plaintext-button': copyFilteredPlaintext,
                   'import-plaintext-button': importPlaintext,
                   'generate-field-button': generateField,
-                  'set-field-button': setField})
+                  'set-field-button': setField,
+                  'import-ciphertext-button': importCiphertext,
+                })
         .forEach(([id, clickCallback]) => {
           elem(id).addEventListener('click', clickCallback);
         });

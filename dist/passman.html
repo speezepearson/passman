@@ -365,6 +365,60 @@ function generateField() {
   flasher.flash('lightgreen', 'Generated a ' + value.length + '-character-long random value for ' + account + '.' + field + ', and copied it to the clipboard.');
 }
 
+function importCiphertext() {
+  var file, html, doc, text, em, importedPlaintext, importedJ;
+  return Promise.resolve().then(function () {
+    file = elem('import-ciphertext-file').files[0];
+
+    if (file === undefined) {
+      flasher.flash('pink', '\n      Tried to merge the ciphertext from another Passman file into working memory,\n      but no file was selected.\n    ');
+    } else {
+      return Promise.resolve().then(function () {
+        return new Promise(function (resolve, reject) {
+          var reader = new FileReader();
+          reader.onload = function (e) {
+            try {
+              resolve(e.target.result);
+            } catch (err) {
+              $this.fileInput.value = [];
+              reject(err);
+            }
+          };
+          reader.readAsText(file);
+        });
+      }).then(function (_resp) {
+        html = _resp;
+        doc = flasher.doOrFlashRed(function () {
+          return new DOMParser().parseFromString(html, 'text/html');
+        }, "Tried to merge the ciphertext from another Passman file into working memory, but selected file couldn't be parsed as HTML.");
+
+        debugger;
+        text = flasher.doOrFlashRed(function () {
+          return doc.getElementById('encrypted-message').innerText;
+        }, "Tried to merge the ciphertext from another Passman file into working memory, but there was no element with id='encrypted-message'.");
+        em = flasher.doOrFlashRed(function () {
+          return _encrypted_message2.default.deserialize(text);
+        }, "Tried to merge the ciphertext from another Passman file into working memory, but couldn't parse the ciphertext from it (this is extra weird -- maybe I made a non-backwards-compatible change to the encrypted-message format?).");
+        return flasher.doOrFlashRed(function () {
+          return em.decrypt(elem('import-ciphertext-password').value);
+        }, "Tried to merge the ciphertext from another Passman file into working memory, but password was wrong to decrypt the other file's ciphertext.");
+      }).then(function (_resp) {
+        importedPlaintext = _resp;
+        importedJ = flasher.doOrFlashRed(function () {
+          return JSON.parse(importedPlaintext);
+        }, "Tried to merge the ciphertext from another Passman file into working memory, but failed to parse the JSON. (This is REALLY WEIRD.)");
+
+
+        flasher.doOrFlashRed(function () {
+          return j.foldIn(new _secret_store.SecretStore(importedJ));
+        }, "Tried to merge the ciphertext from another Passman file into working memory, but the decrypted JSON object from the other file doesn't have the expected shape. (This is REALLY WEIRD.)");
+        updateView();
+        flasher.flash('lightgreen', '\n    Merged the ciphertext from another Passman file into working memory.\n  ');
+      });
+    }
+  }).then(function () {});
+}
+
 function failCatastrophically(reason) {
   document.body.innerText = 'THIS WON\'T WORK FOR YOU. ' + reason;
   throw 'failed catastrophically';
@@ -416,7 +470,9 @@ window.addEventListener('load', function () {
     'copy-filtered-plaintext-button': copyFilteredPlaintext,
     'import-plaintext-button': importPlaintext,
     'generate-field-button': generateField,
-    'set-field-button': setField }).forEach(function (_ref3) {
+    'set-field-button': setField,
+    'import-ciphertext-button': importCiphertext
+  }).forEach(function (_ref3) {
     var _ref4 = _slicedToArray(_ref3, 2),
         id = _ref4[0],
         clickCallback = _ref4[1];
@@ -1142,7 +1198,7 @@ exports.parseQuery = parseQuery;
           <input type="password" id="encryption-password" placeholder="encryption password" />
           <button id="save-button">Encrypt &amp; Save Working Memory</button>
         </li>
-  </ul>
+      </ul>
     </td>
 
     <td rowspan="2" style="padding: 1em; border: 5px solid black; height: 100%; width: 60%">
@@ -1181,7 +1237,12 @@ exports.parseQuery = parseQuery;
           including at least one character from each of these charsets:<br />
           <input type="text" id="generate-field--charsets" placeholder="comma-separated charsets" value="abcdefghijklmnopqrstuvwxyz, ABCDEFGHIJKLMNOPQRSTUVWXYZ, 0123456789, !" />
         </li>
-        <li class="">
+        <li>
+          <button id="import-ciphertext-button">Decrypt and Import</button> another Passman file: <br/>
+          <input id="import-ciphertext-password" type="password" placeholder="decryption password" />
+          <input id="import-ciphertext-file" type="file" />
+        </li>
+        <li>
           <button id="import-plaintext-button">Import JSON</button> by pasting it here:
           <input id="import-plaintext-field" type="password" /><br />
           (e.g. <code style="background:lightgray">{"amazon": {"email": "myself@i.me", "password": "qwertuiop"}}</code>)

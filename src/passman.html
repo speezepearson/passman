@@ -63,7 +63,7 @@
           <input type="password" id="encryption-password" placeholder="encryption password" />
           <button id="save-button">Encrypt &amp; Save Working Memory</button>
         </li>
-  </ul>
+      </ul>
     </td>
 
     <td rowspan="2" style="padding: 1em; border: 5px solid black; height: 100%; width: 60%">
@@ -102,7 +102,12 @@
           including at least one character from each of these charsets:<br />
           <input type="text" id="generate-field--charsets" placeholder="comma-separated charsets" value="abcdefghijklmnopqrstuvwxyz, ABCDEFGHIJKLMNOPQRSTUVWXYZ, 0123456789, !" />
         </li>
-        <li class="">
+        <li>
+          <button id="import-ciphertext-button">Decrypt and Import</button> another Passman file: <br/>
+          <input id="import-ciphertext-password" type="password" placeholder="decryption password" />
+          <input id="import-ciphertext-file" type="file" />
+        </li>
+        <li>
           <button id="import-plaintext-button">Import JSON</button> by pasting it here:
           <input id="import-plaintext-field" type="password" /><br />
           (e.g. <code style="background:lightgray">{"amazon": {"email": "myself@i.me", "password": "qwertuiop"}}</code>)
